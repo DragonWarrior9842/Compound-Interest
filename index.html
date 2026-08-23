@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Compound Interest Calculator</title>
+  <meta name="description" content="A premium compound interest calculator that computes yearly compounded growth at 18% annual rate with fractional month adjustment for each principal entry." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* Design Tokens */
+    :root {
+      --bg-base:       #080d1a;
+      --bg-card:       rgba(255,255,255,0.04);
+      --border:        rgba(255,255,255,0.08);
+      --border-focus:  rgba(0,230,200,0.55);
+      --accent:        #00e6c8;
+      --accent-dim:    rgba(0,230,200,0.15);
+      --accent-glow:   rgba(0,230,200,0.35);
+      --gold:          #f5c842;
+      --text-primary:  #e8f0fe;
+      --text-secondary:#7a8fb5;
+      --text-muted:    #4a5678;
+      --danger:        #ff5f6d;
+      --row-alt:       rgba(255,255,255,0.025);
+      --row-hover:     rgba(0,230,200,0.06);
+      --radius-sm:     8px;
+      --radius-md:     14px;
+      --radius-lg:     20px;
+      --shadow-card:   0 8px 32px rgba(0,0,0,0.45);
+      --shadow-glow:   0 0 24px rgba(0,230,200,0.18);
+      --transition:    0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Animated Background Grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,230,200,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,230,200,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: -10%;
+      width: 60%;
+      height: 60%;
+      background: radial-gradient(ellipse at center, rgba(0,230,200,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+      animation: pulse-glow 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-glow {
+      from { opacity: 0.6; transform: scale(1); }
+      to   { opacity: 1;   transform: scale(1.08); }
+    }
+
+    /* Layout */
+    .page-wrapper {
+      position: relative;
+      z-index: 1;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      animation: fade-in-down 0.6s ease both;
+    }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-focus);
+      border-radius: 100px;
+      padding: 0.35rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1.1rem;
+    }
+
+    header h1 {
+      font-size: clamp(1.75rem, 5vw, 2.8rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      margin-top: 0.65rem;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+      max-width: 520px;
+      margin-inline: auto;
+    }
+
+    /* Glass Card */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 2rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(0,230,200,0.18);
+      box-shadow: var(--shadow-card), var(--shadow-glow);
+    }
+
+    /* Input Section */
+    .input-section {
+      margin-bottom: 1.75rem;
+      animation: fade-in-up 0.55s 0.1s ease both;
+    }
+
+    .section-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, var(--border-focus), transparent);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+    }
+
+    @media (max-width: 540px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field-group { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .field-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      letter-spacing: 0.03em;
+    }
+
+    .input-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrap .icon {
+      position: absolute;
+      left: 0.9rem;
+      font-size: 1rem;
+      color: var(--text-muted);
+      pointer-events: none;
+      transition: color var(--transition);
+      z-index: 1;
+    }
+
+    .field-group input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.5rem;
+      background: rgba(255,255,255,0.04);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+    }
+
+    .field-group input:focus {
+      border-color: var(--border-focus);
+      background: rgba(0,230,200,0.04);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+    }
+
+    .input-wrap:focus-within .icon { color: var(--accent); }
+
+    .field-hint {
+      font-size: 0.73rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: 0.9rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:active { transform: scale(0.97); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent) 0%, #00bfa5 100%);
+      color: #040b14;
+      box-shadow: 0 4px 20px rgba(0,230,200,0.3);
+    }
+
+    .btn-primary:hover {
+      box-shadow: 0 6px 28px rgba(0,230,200,0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-secondary);
+      border: 1.5px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      color: var(--danger);
+      border-color: rgba(255,95,109,0.45);
+      background: rgba(255,95,109,0.07);
+    }
+
+    /* Alerts */
+    .alert {
+      display: none;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.7rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 500;
+      margin-top: 1rem;
+      animation: shake 0.35s ease;
+    }
+
+    .alert.show { display: flex; }
+
+    .alert-error {
+      background: rgba(255,95,109,0.12);
+      border: 1px solid rgba(255,95,109,0.35);
+      color: var(--danger);
+    }
+
+    .alert-info {
+      background: var(--accent-dim);
+      border: 1px solid var(--border-focus);
+      color: var(--accent);
+    }
+
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      25%      { transform: translateX(-5px); }
+      75%      { transform: translateX(5px); }
+    }
+
+    /* Summary Chips */
+    .summary-row {
+      display: none;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+      animation: fade-in-up 0.4s ease both;
+    }
+
+    .summary-row.show { display: grid; }
+
+    @media (max-width: 600px) {
+      .summary-row { grid-template-columns: 1fr; }
+    }
+
+    .chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      transition: all var(--transition);
+    }
+
+    .chip:hover {
+      border-color: var(--border-focus);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .chip-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--text-muted);
+    }
+
+    .chip-value {
+      font-size: 1.45rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .chip-value.principal { color: var(--text-primary); }
+    .chip-value.interest  { color: var(--accent); }
+    .chip-value.amount    { color: var(--gold); }
+
+    /* Table Section */
+    .table-section {
+      display: none;
+      animation: fade-in-up 0.5s ease both;
+    }
+
+    .table-section.show { display: block; }
+
+    .table-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .entry-count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-focus);
+      border-radius: 100px;
+      padding: 0.28rem 0.85rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .table-scroll { overflow-x: auto; border-radius: var(--radius-md); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    thead tr {
+      background: linear-gradient(135deg, rgba(0,230,200,0.12) 0%, rgba(0,191,165,0.07) 100%);
+    }
+
+    thead th {
+      padding: 0.9rem 1.1rem;
+      text-align: right;
+      font-size: 0.73rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border-focus);
+      white-space: nowrap;
+    }
+
+    thead th:first-child { text-align: center; }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+
+    tbody tr:nth-child(even) { background: var(--row-alt); }
+    tbody tr:hover           { background: var(--row-hover); }
+
+    tbody tr.new-row-animate {
+      animation: row-pop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+
+    @keyframes row-pop {
+      from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+      to   { opacity: 1; transform: translateY(0)    scale(1); }
+    }
+
+    tbody td {
+      padding: 0.75rem 1.1rem;
+      text-align: right;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    tbody td:first-child {
+      text-align: center;
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    tbody td.td-principal { color: var(--text-primary); font-weight: 600; }
+    tbody td.td-interest  { color: var(--accent); }
+    tbody td.td-amount    { color: var(--gold); font-weight: 600; }
+
+    /* Totals row */
+    tfoot tr {
+      background: linear-gradient(135deg, rgba(245,200,66,0.10) 0%, rgba(245,200,66,0.05) 100%);
+      border-top: 2px solid rgba(245,200,66,0.35);
+    }
+
+    tfoot td {
+      padding: 1rem 1.1rem;
+      text-align: right;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    tfoot td:first-child {
+      text-align: center;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--gold);
+    }
+
+    tfoot td.tf-principal { color: var(--text-primary); }
+    tfoot td.tf-interest  { color: var(--accent); }
+    tfoot td.tf-amount    { color: var(--gold); font-size: 1rem; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      letter-spacing: 0.04em;
+    }
+
+    footer span { color: var(--accent); }
+
+    /* Animations */
+    @keyframes fade-in-down {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fade-in-up {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hide number input spinners */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type=number] { -moz-appearance: textfield; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(0,230,200,0.25); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(0,230,200,0.45); }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="header-badge">
+      <span>&#128201;</span> Financial Calculator
+    </div>
+    <h1>Compound Interest Calculator</h1>
+    <p>Add multiple principal entries and instantly see how your money grows at <strong>18% annual</strong> compound interest with fractional&#8209;month precision.</p>
+  </header>
+
+  <!-- Input Card -->
+  <div class="glass-card input-section">
+    <div class="section-title">New Entry</div>
+
+    <div class="form-grid">
+      <!-- Principal -->
+      <div class="field-group">
+        <label for="inp-principal">Principal Amount (&#8377;)</label>
+        <div class="input-wrap">
+          <span class="icon" aria-hidden="true">&#8377;</span>
+          <input
+            type="number"
+            id="inp-principal"
+            placeholder="e.g. 10000"
+            min="0"
+            step="any"
+            autocomplete="off"
+          />
+        </div>
+        <span class="field-hint">Enter 0 to stop adding entries (Java loop-exit condition).</span>
+      </div>
+
+      <!-- Time -->
+      <div class="field-group">
+        <label for="inp-months">Time in Months</label>
+        <div class="input-wrap">
+          <span class="icon" aria-hidden="true">&#128197;</span>
+          <input
+            type="number"
+            id="inp-months"
+            placeholder="e.g. 18"
+            min="1"
+            step="1"
+            autocomplete="off"
+          />
+        </div>
+        <span class="field-hint">Splits into full years (&#247;12) and remaining months (%12).</span>
+      </div>
+    </div>
+
+    <!-- Validation alert -->
+    <div class="alert alert-error" id="alert-error" role="alert" aria-live="polite">
+      <span>&#9888;&#65039;</span>
+      <span id="alert-msg">Please fill in all fields.</span>
+    </div>
+
+    <!-- Info alert (principal = 0) -->
+    <div class="alert alert-info" id="alert-info" role="status" aria-live="polite">
+      <span>&#8505;&#65039;</span>
+      <span>Principal is 0 &#8212; entry not added (matches Java loop-exit condition).</span>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" id="btn-add" type="button">
+        &#43; Add Entry
+      </button>
+      <button class="btn btn-secondary" id="btn-reset" type="button">
+        &#128465; Reset All
+      </button>
+    </div>
+  </div>
+
+  <!-- Summary Chips -->
+  <div class="summary-row" id="summary-row">
+    <div class="chip">
+      <span class="chip-label">Total Principal</span>
+      <span class="chip-value principal" id="chip-principal">&#8377;0.00</span>
+    </div>
+    <div class="chip">
+      <span class="chip-label">Total Interest</span>
+      <span class="chip-value interest" id="chip-interest">&#8377;0.00</span>
+    </div>
+    <div class="chip">
+      <span class="chip-label">Grand Total Amount</span>
+      <span class="chip-value amount" id="chip-amount">&#8377;0.00</span>
+    </div>
+  </div>
+
+  <!-- Table Section -->
+  <div class="table-section glass-card" id="table-section">
+    <div class="table-header-row">
+      <div class="section-title" style="margin-bottom:0; flex:1;">Calculation Results</div>
+      <div class="entry-count-badge" id="entry-count-badge">0 entries</div>
+    </div>
+
+    <div class="table-scroll">
+      <table id="results-table" aria-label="Compound Interest Results">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Principal (&#8377;)</th>
+            <th scope="col">Interest (&#8377;)</th>
+            <th scope="col">Total Amount (&#8377;)</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+        </tbody>
+        <tfoot id="table-footer">
+          <tr>
+            <td>Grand<br>Totals</td>
+            <td class="tf-principal" id="tf-principal">&#8377;0.00</td>
+            <td class="tf-interest"  id="tf-interest">&#8377;0.00</td>
+            <td class="tf-amount"    id="tf-amount">&#8377;0.00</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    Formula: <span>Amount = a &times; 1.18<sup>c</sup> &times; (1 + d &divide; 100)</span>
+    &nbsp;|&nbsp; c = &lfloor;months &divide; 12&rfloor;, d = months mod 12
+  </footer>
+
+</div>
+
+<script>
+  /*
+    Compound Interest Calculator — JS (mirrors Java logic exactly)
+
+    Java variables:
+      a = principal
+      b = total months
+      c = b / 12        (integer division = Math.floor(b / 12))
+      d = b % 12        (remaining months)
+      amount = a * Math.pow(1.18, c) * (1 + d / 100)
+      interest = amount - a
+
+    Java loop exits when principal == 0 (we show an info alert instead).
+  */
+
+  const entries = [];
+
+  const inpPrincipal    = document.getElementById('inp-principal');
+  const inpMonths       = document.getElementById('inp-months');
+  const btnAdd          = document.getElementById('btn-add');
+  const btnReset        = document.getElementById('btn-reset');
+  const alertError      = document.getElementById('alert-error');
+  const alertMsg        = document.getElementById('alert-msg');
+  const alertInfo       = document.getElementById('alert-info');
+  const summaryRow      = document.getElementById('summary-row');
+  const tableSection    = document.getElementById('table-section');
+  const tableBody       = document.getElementById('table-body');
+  const entryCountBadge = document.getElementById('entry-count-badge');
+  const chipPrincipal   = document.getElementById('chip-principal');
+  const chipInterest    = document.getElementById('chip-interest');
+  const chipAmount      = document.getElementById('chip-amount');
+  const tfPrincipal     = document.getElementById('tf-principal');
+  const tfInterest      = document.getElementById('tf-interest');
+  const tfAmount        = document.getElementById('tf-amount');
+
+  // Format as Indian Rupee
+  function fmt(n) {
+    return '\u20B9' + n.toLocaleString('en-IN', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
+  function clearAlerts() {
+    alertError.classList.remove('show');
+    alertInfo.classList.remove('show');
+  }
+
+  function showError(msg) {
+    alertMsg.textContent = msg;
+    alertError.classList.add('show');
+    alertInfo.classList.remove('show');
+  }
+
+  // Exact Java formula
+  function calculate(a, b) {
+    var c = Math.floor(b / 12);          // whole years
+    var d = b % 12;                      // remaining months
+    var amount   = a * Math.pow(1.18, c) * (1 + d / 100);
+    var interest = amount - a;
+    return { amount: amount, interest: interest };
+  }
+
+  function addEntry() {
+    clearAlerts();
+
+    var rawA = inpPrincipal.value.trim();
+    var rawB = inpMonths.value.trim();
+
+    if (rawA === '') { showError('Please enter a Principal amount.'); inpPrincipal.focus(); return; }
+    if (rawB === '') { showError('Please enter Time in Months.');     inpMonths.focus();    return; }
+
+    var a = parseFloat(rawA);
+    var b = parseInt(rawB, 10);
+
+    if (isNaN(a) || a < 0)    { showError('Principal must be a non-negative number.'); inpPrincipal.focus(); return; }
+    if (isNaN(b) || b <= 0)   { showError('Time in Months must be a positive integer.'); inpMonths.focus(); return; }
+
+    // Java exit condition: principal == 0 means stop
+    if (a === 0) {
+      alertInfo.classList.add('show');
+      inpPrincipal.value = '';
+      inpMonths.value    = '';
+      inpPrincipal.focus();
+      return;
+    }
+
+    var result = calculate(a, b);
+    entries.push({ principal: a, interest: result.interest, amount: result.amount });
+
+    renderTable();
+    updateSummary();
+
+    inpPrincipal.value = '';
+    inpMonths.value    = '';
+    inpPrincipal.focus();
+  }
+
+  function renderTable() {
+    tableSection.classList.add('show');
+    summaryRow.classList.add('show');
+    tableBody.innerHTML = '';
+
+    entries.forEach(function(e, i) {
+      var tr = document.createElement('tr');
+      tr.className = 'new-row-animate';
+      tr.innerHTML =
+        '<td>' + (i + 1) + '</td>' +
+        '<td class="td-principal">' + fmt(e.principal) + '</td>' +
+        '<td class="td-interest">'  + fmt(e.interest)  + '</td>' +
+        '<td class="td-amount">'    + fmt(e.amount)    + '</td>';
+      tableBody.appendChild(tr);
+    });
+
+    var n = entries.length;
+    entryCountBadge.textContent = n === 1 ? '1 entry' : n + ' entries';
+  }
+
+  function updateSummary() {
+    var totP = entries.reduce(function(s, e) { return s + e.principal; }, 0);
+    var totI = entries.reduce(function(s, e) { return s + e.interest;  }, 0);
+    var totA = entries.reduce(function(s, e) { return s + e.amount;    }, 0);
+
+    chipPrincipal.textContent = fmt(totP);
+    chipInterest.textContent  = fmt(totI);
+    chipAmount.textContent    = fmt(totA);
+
+    tfPrincipal.textContent = fmt(totP);
+    tfInterest.textContent  = fmt(totI);
+    tfAmount.textContent    = fmt(totA);
+  }
+
+  function resetAll() {
+    entries.length = 0;
+    tableBody.innerHTML = '';
+    tableSection.classList.remove('show');
+    summaryRow.classList.remove('show');
+    clearAlerts();
+    updateSummary();
+    inpPrincipal.value = '';
+    inpMonths.value    = '';
+    inpPrincipal.focus();
+  }
+
+  btnAdd.addEventListener('click', addEntry);
+  btnReset.addEventListener('click', resetAll);
+
+  [inpPrincipal, inpMonths].forEach(function(el) {
+    el.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addEntry();
+    });
+  });
+
+  inpPrincipal.focus();
+</script>
+
+</body>
+</html>
