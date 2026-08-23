@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>1.75% Compound Interest Calculator</title>
+  <meta name="description" content="Compound interest calculator at 1.75% annual rate with automatic date-based month calculation." />
+  <script>window.RATE_CONFIG = { rate: 1.75, label: '1.75%', file: 'rate-175.html', accent: '#10d9a0', rgb: '16,217,160' };</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="shared.css" />
+</head>
+<body>
+
+  <nav id="main-nav"></nav>
+
+  <div class="page-wrapper">
+
+    <header>
+      <div class="header-badge">&#128201; <span class="badge-rate" id="lbl-badge">1.75%</span> Annual Rate</div>
+      <h1 id="lbl-h1">1.75% Annual Rate Calculator</h1>
+      <p id="lbl-subtitle">Compound interest calculator</p>
+    </header>
+
+    <div class="glass-card input-section">
+      <div class="section-title">New Entry</div>
+
+      <div class="form-grid-3">
+        <div class="field-group">
+          <label for="inp-principal">Principal Amount (&#8377;)</label>
+          <div class="input-wrap">
+            <span class="icon" aria-hidden="true">&#8377;</span>
+            <input type="number" id="inp-principal" placeholder="e.g. 50000" min="0" step="any" autocomplete="off" />
+          </div>
+          <span class="field-hint">Enter 0 to stop (Java loop-exit condition).</span>
+        </div>
+
+        <div class="field-group">
+          <label for="inp-start-date">Start Date</label>
+          <div class="input-wrap">
+            <span class="icon" aria-hidden="true">&#128197;</span>
+            <input type="date" id="inp-start-date" autocomplete="off" />
+          </div>
+          <span class="field-hint">Date from which interest is applied.</span>
+        </div>
+
+        <div class="field-group">
+          <label for="inp-current-date">Current Date</label>
+          <div class="input-wrap">
+            <span class="icon" aria-hidden="true">&#128204;</span>
+            <input type="date" id="inp-current-date" autocomplete="off" />
+          </div>
+          <span class="field-hint">Auto-filled with today. Adjust if needed.</span>
+        </div>
+      </div>
+
+      <div class="date-preview" id="date-preview">
+        <div class="dp-title">&#128336; Date Difference Breakdown</div>
+        <div class="dp-grid">
+          <div><div class="dp-cell-label">Start Date</div><div class="dp-cell-value v-purple" id="dp-start">—</div></div>
+          <div><div class="dp-cell-label">Current Date</div><div class="dp-cell-value v-accent" id="dp-end">—</div></div>
+          <div><div class="dp-cell-label">Months Used (b)</div><div class="dp-cell-value v-gold" id="dp-months">—</div></div>
+        </div>
+        <div class="dp-rule">
+          Raw difference: <span id="dp-raw">—</span> &mdash; <span id="dp-desc"></span>
+          <br/><span class="rounding-badge" id="dp-pill"></span>
+        </div>
+      </div>
+
+      <div class="alert alert-error" id="alert-error" role="alert" aria-live="polite">
+        <span>&#9888;</span> <span id="alert-msg">Error</span>
+      </div>
+      <div class="alert alert-info" id="alert-info" role="status" aria-live="polite">
+        <span>&#8505;</span> Principal is 0 — entry not added (Java loop-exit condition).
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" id="btn-add" type="button">&#43; Add Entry</button>
+        <button class="btn btn-secondary" id="btn-reset" type="button">&#128465; Reset All</button>
+      </div>
+    </div>
+
+    <div class="summary-row" id="summary-row">
+      <div class="chip"><div class="chip-label">Total Principal</div><div class="chip-value c-p" id="chip-p">0</div></div>
+      <div class="chip"><div class="chip-label">Total Months</div><div class="chip-value c-m" id="chip-m">0</div></div>
+      <div class="chip"><div class="chip-label">Total Interest</div><div class="chip-value c-i" id="chip-i">0</div></div>
+      <div class="chip"><div class="chip-label">Grand Total Amount</div><div class="chip-value c-a" id="chip-a">0</div></div>
+    </div>
+
+    <div class="table-section glass-card" id="table-section">
+      <div class="table-header-row">
+        <div class="section-title" style="margin-bottom:0;flex:1;">Calculation Results</div>
+        <div class="entry-badge" id="entry-badge">0 entries</div>
+      </div>
+      <div class="table-scroll">
+        <table aria-label="Compound Interest Results">
+          <thead>
+            <tr>
+              <th scope="col">Count</th>
+              <th scope="col">Principal (&#8377;)</th>
+              <th scope="col" class="th-m">Months (b)</th>
+              <th scope="col">Interest (&#8377;)</th>
+              <th scope="col">Total Amount (&#8377;)</th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+          <tfoot>
+            <tr>
+              <td>Totals</td>
+              <td class="tf-p" id="tf-p">0</td>
+              <td class="tf-m" id="tf-m">0</td>
+              <td class="tf-i" id="tf-i">0</td>
+              <td class="tf-a" id="tf-a">0</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <footer>
+      Formula: <span class="f-accent" id="lbl-formula">a &times; (1 + 1.75/100)<sup>c</sup> &times; (1 + d/100)</span><br/>
+      c = &lfloor;b &divide; 12&rfloor; &nbsp;|&nbsp; d = b mod 12 &nbsp;|&nbsp;
+      Rounding: 1&ndash;2 leftover days &rarr; ignore &nbsp;&bull;&nbsp; 3+ days &rarr; +1 month
+    </footer>
+
+  </div>
+
+  <script src="shared.js"></script>
+</body>
+</html>
