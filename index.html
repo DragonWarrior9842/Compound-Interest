@@ -639,8 +639,8 @@
 
   <!-- Footer -->
   <footer>
-    Formula: <span>Amount = a &times; 1.18<sup>c</sup> &times; (1 + d &divide; 100)</span>
-    &nbsp;|&nbsp; c = &lfloor;months &divide; 12&rfloor;, d = months mod 12
+    Formula: <span>Amount = a &times; 1.18<sup>c</sup> &times; (1 + d &times; 1.5 &divide; 100)</span>
+    &nbsp;|&nbsp; c = &lfloor;months &divide; 12&rfloor;, d = months mod 12 &nbsp;|&nbsp; Interest &amp; Amount displayed via Math.ceil()
   </footer>
 
 </div>
@@ -649,15 +649,21 @@
   /*
     Compound Interest Calculator — JS (mirrors Java logic exactly)
 
-    Java variables:
-      a = principal
-      b = total months
-      c = b / 12        (integer division = Math.floor(b / 12))
-      d = b % 12        (remaining months)
-      amount = a * Math.pow(1.18, c) * (1 + d / 100)
+    Ankur.java variables (exact mirror):
+      a = principal           (treated as integer)
+      b = total months        (integer)
+      c = b / 12              (integer division = Math.floor(b / 12))
+      d = b % 12              (double — remaining months)
+      amount   = a * Math.pow(1.18, c) * (1 + d * 1.5 / 100)
       interest = amount - a
 
-    Java loop exits when principal == 0 (we show an info alert instead).
+    Display rules (matching Java output):
+      - Principal : (int) cast  → Math.floor()
+      - Interest  : Math.ceil()
+      - Amount    : Math.ceil()
+      - Totals    : integer accumulation (+=)
+
+    Java loop exits when a == 0 (we show an info alert instead).
   */
 
   const entries = [];
@@ -699,14 +705,23 @@
     alertInfo.classList.remove('show');
   }
 
-  // Exact Java formula
+  // Exact Ankur.java formula
+  // int c = b / 12;  double d = b % 12;
+  // amount = a * Math.pow(1.18, c) * (1 + d * 1.5 / 100)
   function calculate(a, b) {
-    var c = Math.floor(b / 12);          // whole years
-    var d = b % 12;                      // remaining months
-    var amount   = a * Math.pow(1.18, c) * (1 + d / 100);
+    var c = Math.floor(b / 12);                          // whole years  (int division)
+    var d = b % 12;                                      // remaining months (double in Java)
+    var amount   = a * Math.pow(1.18, c) * (1 + d * 1.5 / 100);
     var interest = amount - a;
     return { amount: amount, interest: interest };
   }
+
+  // Java display helpers
+  // principal: (int) cast  → Math.floor
+  // interest & amount: Math.ceil
+  function displayPrincipal(n) { return Math.floor(n); }
+  function displayInterest(n)  { return Math.ceil(n); }
+  function displayAmount(n)    { return Math.ceil(n); }
 
   function addEntry() {
     clearAlerts();
@@ -733,6 +748,7 @@
     }
 
     var result = calculate(a, b);
+    // Store raw floats; display rounding is applied in renderTable/updateSummary
     entries.push({ principal: a, interest: result.interest, amount: result.amount });
 
     renderTable();
@@ -751,11 +767,12 @@
     entries.forEach(function(e, i) {
       var tr = document.createElement('tr');
       tr.className = 'new-row-animate';
+      // Match Java output: (int)principal + (int)ceil(interest) = (int)ceil(amount)
       tr.innerHTML =
         '<td>' + (i + 1) + '</td>' +
-        '<td class="td-principal">' + fmt(e.principal) + '</td>' +
-        '<td class="td-interest">'  + fmt(e.interest)  + '</td>' +
-        '<td class="td-amount">'    + fmt(e.amount)    + '</td>';
+        '<td class="td-principal">' + displayPrincipal(e.principal).toLocaleString('en-IN') + '</td>' +
+        '<td class="td-interest">'  + displayInterest(e.interest).toLocaleString('en-IN')  + '</td>' +
+        '<td class="td-amount">'    + displayAmount(e.amount).toLocaleString('en-IN')    + '</td>';
       tableBody.appendChild(tr);
     });
 
@@ -764,17 +781,19 @@
   }
 
   function updateSummary() {
-    var totP = entries.reduce(function(s, e) { return s + e.principal; }, 0);
-    var totI = entries.reduce(function(s, e) { return s + e.interest;  }, 0);
-    var totA = entries.reduce(function(s, e) { return s + e.amount;    }, 0);
+    // Java: principle += list.get(i); interest += list.get(i+1); amount += list.get(i+2);
+    // All are integer additions (implicit truncation via int accumulator)
+    var totP = entries.reduce(function(s, e) { return s + Math.floor(e.principal); }, 0);
+    var totI = entries.reduce(function(s, e) { return s + Math.ceil(e.interest);   }, 0);
+    var totA = entries.reduce(function(s, e) { return s + Math.ceil(e.amount);     }, 0);
 
-    chipPrincipal.textContent = fmt(totP);
-    chipInterest.textContent  = fmt(totI);
-    chipAmount.textContent    = fmt(totA);
+    chipPrincipal.textContent = totP.toLocaleString('en-IN');
+    chipInterest.textContent  = totI.toLocaleString('en-IN');
+    chipAmount.textContent    = totA.toLocaleString('en-IN');
 
-    tfPrincipal.textContent = fmt(totP);
-    tfInterest.textContent  = fmt(totI);
-    tfAmount.textContent    = fmt(totA);
+    tfPrincipal.textContent = totP.toLocaleString('en-IN');
+    tfInterest.textContent  = totI.toLocaleString('en-IN');
+    tfAmount.textContent    = totA.toLocaleString('en-IN');
   }
 
   function resetAll() {
