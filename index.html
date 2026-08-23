@@ -4,13 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Compound Interest Calculator</title>
-  <meta name="description" content="A premium compound interest calculator that computes yearly compounded growth at 18% annual rate with fractional month adjustment for each principal entry." />
+  <meta name="description" content="Premium compound interest calculator using date-based month calculation at 18% annual rate, mirroring the Ankur.java backend logic." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
   <style>
-    /* Design Tokens */
+    /* ── Design Tokens ──────────────────────────────────────────── */
     :root {
       --bg-base:       #080d1a;
       --bg-card:       rgba(255,255,255,0.04);
@@ -19,7 +19,10 @@
       --accent:        #00e6c8;
       --accent-dim:    rgba(0,230,200,0.15);
       --accent-glow:   rgba(0,230,200,0.35);
+      --purple:        #a78bfa;
+      --purple-dim:    rgba(167,139,250,0.12);
       --gold:          #f5c842;
+      --gold-dim:      rgba(245,200,66,0.12);
       --text-primary:  #e8f0fe;
       --text-secondary:#7a8fb5;
       --text-muted:    #4a5678;
@@ -46,7 +49,7 @@
       position: relative;
     }
 
-    /* Animated Background Grid */
+    /* Animated Grid Background */
     body::before {
       content: '';
       position: fixed;
@@ -58,41 +61,36 @@
       pointer-events: none;
       z-index: 0;
     }
-
     body::after {
       content: '';
       position: fixed;
-      top: -30%;
-      left: -10%;
-      width: 60%;
-      height: 60%;
+      top: -30%; left: -10%;
+      width: 60%; height: 60%;
       background: radial-gradient(ellipse at center, rgba(0,230,200,0.06) 0%, transparent 70%);
       pointer-events: none;
       z-index: 0;
       animation: pulse-glow 8s ease-in-out infinite alternate;
     }
-
     @keyframes pulse-glow {
       from { opacity: 0.6; transform: scale(1); }
       to   { opacity: 1;   transform: scale(1.08); }
     }
 
-    /* Layout */
+    /* ── Layout ─────────────────────────────────────────────────── */
     .page-wrapper {
       position: relative;
       z-index: 1;
-      max-width: 960px;
+      max-width: 1020px;
       margin: 0 auto;
       padding: 2rem 1.25rem 4rem;
     }
 
-    /* Header */
+    /* ── Header ─────────────────────────────────────────────────── */
     header {
       text-align: center;
       margin-bottom: 2.5rem;
       animation: fade-in-down 0.6s ease both;
     }
-
     .header-badge {
       display: inline-flex;
       align-items: center;
@@ -108,7 +106,6 @@
       text-transform: uppercase;
       margin-bottom: 1.1rem;
     }
-
     header h1 {
       font-size: clamp(1.75rem, 5vw, 2.8rem);
       font-weight: 800;
@@ -119,16 +116,15 @@
       line-height: 1.15;
       letter-spacing: -0.02em;
     }
-
     header p {
       margin-top: 0.65rem;
       color: var(--text-secondary);
       font-size: 0.95rem;
-      max-width: 520px;
+      max-width: 560px;
       margin-inline: auto;
     }
 
-    /* Glass Card */
+    /* ── Glass Card ─────────────────────────────────────────────── */
     .glass-card {
       background: var(--bg-card);
       backdrop-filter: blur(16px);
@@ -139,18 +135,12 @@
       padding: 2rem;
       transition: border-color var(--transition), box-shadow var(--transition);
     }
-
     .glass-card:hover {
       border-color: rgba(0,230,200,0.18);
       box-shadow: var(--shadow-card), var(--shadow-glow);
     }
 
-    /* Input Section */
-    .input-section {
-      margin-bottom: 1.75rem;
-      animation: fade-in-up 0.55s 0.1s ease both;
-    }
-
+    /* ── Section Title ──────────────────────────────────────────── */
     .section-title {
       font-size: 0.78rem;
       font-weight: 700;
@@ -162,7 +152,6 @@
       align-items: center;
       gap: 0.5rem;
     }
-
     .section-title::after {
       content: '';
       flex: 1;
@@ -170,18 +159,22 @@
       background: linear-gradient(90deg, var(--border-focus), transparent);
     }
 
+    /* ── Input Section ──────────────────────────────────────────── */
+    .input-section {
+      margin-bottom: 1.5rem;
+      animation: fade-in-up 0.55s 0.1s ease both;
+    }
+
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 1.25rem;
     }
-
-    @media (max-width: 540px) {
+    @media (max-width: 560px) {
       .form-grid { grid-template-columns: 1fr; }
     }
 
     .field-group { display: flex; flex-direction: column; gap: 0.5rem; }
-
     .field-group label {
       font-size: 0.8rem;
       font-weight: 600;
@@ -194,18 +187,19 @@
       display: flex;
       align-items: center;
     }
-
     .input-wrap .icon {
       position: absolute;
       left: 0.9rem;
-      font-size: 1rem;
+      font-size: 0.95rem;
       color: var(--text-muted);
       pointer-events: none;
       transition: color var(--transition);
       z-index: 1;
     }
+    .input-wrap:focus-within .icon { color: var(--accent); }
 
-    .field-group input {
+    .field-group input[type="number"],
+    .field-group input[type="date"] {
       width: 100%;
       padding: 0.75rem 1rem 0.75rem 2.5rem;
       background: rgba(255,255,255,0.04);
@@ -217,30 +211,122 @@
       font-weight: 500;
       outline: none;
       transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+      /* Style native date picker */
+      color-scheme: dark;
     }
-
+    .field-group input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.7) sepia(1) saturate(3) hue-rotate(130deg);
+      cursor: pointer;
+      opacity: 0.7;
+    }
     .field-group input:focus {
       border-color: var(--border-focus);
       background: rgba(0,230,200,0.04);
       box-shadow: 0 0 0 3px var(--accent-dim);
     }
-
-    .input-wrap:focus-within .icon { color: var(--accent); }
-
     .field-hint {
       font-size: 0.73rem;
       color: var(--text-muted);
       margin-top: 0.2rem;
     }
 
-    /* Buttons */
+    /* ── Date Preview Card ──────────────────────────────────────── */
+    .date-preview {
+      display: none;
+      margin-top: 1.4rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      background: rgba(167,139,250,0.06);
+      border-color: rgba(167,139,250,0.25);
+      padding: 1.1rem 1.4rem;
+      animation: expand-in 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+    .date-preview.show { display: block; }
+
+    @keyframes expand-in {
+      from { opacity: 0; transform: scaleY(0.85); }
+      to   { opacity: 1; transform: scaleY(1); }
+    }
+
+    .date-preview-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      color: var(--purple);
+      margin-bottom: 0.85rem;
+    }
+
+    .date-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+    }
+    @media (max-width: 560px) {
+      .date-grid { grid-template-columns: 1fr; }
+    }
+
+    .date-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .date-cell-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .date-cell-value {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .date-cell-value.accent  { color: var(--accent); }
+    .date-cell-value.purple  { color: var(--purple); }
+
+    /* raw diff display */
+    .diff-raw {
+      margin-top: 0.85rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+    .diff-raw span { color: var(--purple); font-weight: 700; }
+    .diff-raw .months-final { color: var(--accent); }
+
+    /* Rounding badge */
+    .rounding-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      margin-top: 0.5rem;
+      padding: 0.25rem 0.7rem;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+    .rounding-badge.round-down {
+      background: rgba(74,86,120,0.3);
+      border: 1px solid rgba(74,86,120,0.5);
+      color: var(--text-secondary);
+    }
+    .rounding-badge.round-up {
+      background: rgba(0,230,200,0.12);
+      border: 1px solid var(--border-focus);
+      color: var(--accent);
+    }
+
+    /* ── Buttons ────────────────────────────────────────────────── */
     .btn-row {
       display: flex;
       gap: 0.9rem;
       margin-top: 1.5rem;
       flex-wrap: wrap;
     }
-
     .btn {
       display: inline-flex;
       align-items: center;
@@ -253,36 +339,29 @@
       cursor: pointer;
       border: none;
       transition: all var(--transition);
-      position: relative;
-      overflow: hidden;
     }
-
     .btn:active { transform: scale(0.97); }
-
     .btn-primary {
       background: linear-gradient(135deg, var(--accent) 0%, #00bfa5 100%);
       color: #040b14;
       box-shadow: 0 4px 20px rgba(0,230,200,0.3);
     }
-
     .btn-primary:hover {
       box-shadow: 0 6px 28px rgba(0,230,200,0.5);
       transform: translateY(-1px);
     }
-
     .btn-secondary {
       background: rgba(255,255,255,0.06);
       color: var(--text-secondary);
       border: 1.5px solid var(--border);
     }
-
     .btn-secondary:hover {
       color: var(--danger);
       border-color: rgba(255,95,109,0.45);
       background: rgba(255,95,109,0.07);
     }
 
-    /* Alerts */
+    /* ── Alerts ─────────────────────────────────────────────────── */
     .alert {
       display: none;
       align-items: center;
@@ -292,41 +371,36 @@
       font-size: 0.85rem;
       font-weight: 500;
       margin-top: 1rem;
-      animation: shake 0.35s ease;
     }
-
-    .alert.show { display: flex; }
-
+    .alert.show { display: flex; animation: shake 0.35s ease; }
     .alert-error {
       background: rgba(255,95,109,0.12);
       border: 1px solid rgba(255,95,109,0.35);
       color: var(--danger);
     }
-
     .alert-info {
       background: var(--accent-dim);
       border: 1px solid var(--border-focus);
       color: var(--accent);
     }
-
     @keyframes shake {
       0%,100% { transform: translateX(0); }
       25%      { transform: translateX(-5px); }
       75%      { transform: translateX(5px); }
     }
 
-    /* Summary Chips */
+    /* ── Summary Chips ──────────────────────────────────────────── */
     .summary-row {
       display: none;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(4, 1fr);
       gap: 1rem;
       margin-bottom: 1.75rem;
-      animation: fade-in-up 0.4s ease both;
     }
-
-    .summary-row.show { display: grid; }
-
-    @media (max-width: 600px) {
+    .summary-row.show { display: grid; animation: fade-in-up 0.4s ease both; }
+    @media (max-width: 720px) {
+      .summary-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 440px) {
       .summary-row { grid-template-columns: 1fr; }
     }
 
@@ -334,42 +408,38 @@
       background: var(--bg-card);
       border: 1px solid var(--border);
       border-radius: var(--radius-md);
-      padding: 1.1rem 1.25rem;
+      padding: 1rem 1.2rem;
       display: flex;
       flex-direction: column;
-      gap: 0.35rem;
+      gap: 0.3rem;
       transition: all var(--transition);
     }
-
     .chip:hover {
       border-color: var(--border-focus);
       box-shadow: var(--shadow-glow);
     }
-
     .chip-label {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.09em;
       color: var(--text-muted);
     }
-
     .chip-value {
-      font-size: 1.45rem;
+      font-size: 1.3rem;
       font-weight: 700;
       letter-spacing: -0.02em;
     }
+    .chip-value.c-principal { color: var(--text-primary); }
+    .chip-value.c-interest  { color: var(--accent); }
+    .chip-value.c-months    { color: var(--purple); }
+    .chip-value.c-amount    { color: var(--gold); }
 
-    .chip-value.principal { color: var(--text-primary); }
-    .chip-value.interest  { color: var(--accent); }
-    .chip-value.amount    { color: var(--gold); }
-
-    /* Table Section */
+    /* ── Table Section ──────────────────────────────────────────── */
     .table-section {
       display: none;
       animation: fade-in-up 0.5s ease both;
     }
-
     .table-section.show { display: block; }
 
     .table-header-row {
@@ -378,7 +448,6 @@
       align-items: center;
       margin-bottom: 1rem;
     }
-
     .entry-count-badge {
       display: inline-flex;
       align-items: center;
@@ -399,15 +468,13 @@
       border-collapse: collapse;
       font-size: 0.88rem;
     }
-
     thead tr {
       background: linear-gradient(135deg, rgba(0,230,200,0.12) 0%, rgba(0,191,165,0.07) 100%);
     }
-
     thead th {
       padding: 0.9rem 1.1rem;
       text-align: right;
-      font-size: 0.73rem;
+      font-size: 0.7rem;
       font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
@@ -415,20 +482,16 @@
       border-bottom: 1px solid var(--border-focus);
       white-space: nowrap;
     }
-
     thead th:first-child { text-align: center; }
+    thead th.th-months   { color: var(--purple); }
 
     tbody tr {
       border-bottom: 1px solid var(--border);
       transition: background var(--transition);
     }
-
     tbody tr:nth-child(even) { background: var(--row-alt); }
-    tbody tr:hover           { background: var(--row-hover); }
-
-    tbody tr.new-row-animate {
-      animation: row-pop 0.35s cubic-bezier(0.34,1.56,0.64,1) both;
-    }
+    tbody tr:hover            { background: var(--row-hover); }
+    tbody tr.new-row-animate  { animation: row-pop 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
 
     @keyframes row-pop {
       from { opacity: 0; transform: translateY(-8px) scale(0.98); }
@@ -442,24 +505,22 @@
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
-
     tbody td:first-child {
       text-align: center;
       color: var(--text-muted);
       font-weight: 700;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
     }
-
     tbody td.td-principal { color: var(--text-primary); font-weight: 600; }
     tbody td.td-interest  { color: var(--accent); }
+    tbody td.td-months    { color: var(--purple); font-weight: 600; text-align: center; }
     tbody td.td-amount    { color: var(--gold); font-weight: 600; }
 
-    /* Totals row */
+    /* Totals Row */
     tfoot tr {
-      background: linear-gradient(135deg, rgba(245,200,66,0.10) 0%, rgba(245,200,66,0.05) 100%);
+      background: linear-gradient(135deg, var(--gold-dim) 0%, rgba(245,200,66,0.03) 100%);
       border-top: 2px solid rgba(245,200,66,0.35);
     }
-
     tfoot td {
       padding: 1rem 1.1rem;
       text-align: right;
@@ -467,43 +528,41 @@
       font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
-
     tfoot td:first-child {
       text-align: center;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--gold);
     }
-
     tfoot td.tf-principal { color: var(--text-primary); }
     tfoot td.tf-interest  { color: var(--accent); }
+    tfoot td.tf-months    { color: var(--purple); font-size: 0.9rem; text-align: center; }
     tfoot td.tf-amount    { color: var(--gold); font-size: 1rem; }
 
-    /* Footer */
+    /* ── Footer ─────────────────────────────────────────────────── */
     footer {
       text-align: center;
       margin-top: 3rem;
       color: var(--text-muted);
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       letter-spacing: 0.04em;
+      line-height: 1.8;
     }
-
     footer span { color: var(--accent); }
 
-    /* Animations */
+    /* ── Animations ─────────────────────────────────────────────── */
     @keyframes fade-in-down {
       from { opacity: 0; transform: translateY(-20px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-
     @keyframes fade-in-up {
       from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* Hide number input spinners */
+    /* Hide number spinners */
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
@@ -519,20 +578,19 @@
 
 <div class="page-wrapper">
 
-  <!-- Header -->
+  <!-- ── Header ─────────────────────────────────────────────────── -->
   <header>
-    <div class="header-badge">
-      <span>&#128201;</span> Financial Calculator
-    </div>
+    <div class="header-badge">&#128201; Financial Calculator</div>
     <h1>Compound Interest Calculator</h1>
-    <p>Add multiple principal entries and instantly see how your money grows at <strong>18% annual</strong> compound interest with fractional&#8209;month precision.</p>
+    <p>Pick a start date — the app calculates elapsed months automatically and computes growth at <strong>18% annual</strong> compound interest using the Ankur.java formula.</p>
   </header>
 
-  <!-- Input Card -->
+  <!-- ── Input Card ─────────────────────────────────────────────── -->
   <div class="glass-card input-section">
     <div class="section-title">New Entry</div>
 
     <div class="form-grid">
+
       <!-- Principal -->
       <div class="field-group">
         <label for="inp-principal">Principal Amount (&#8377;)</label>
@@ -541,7 +599,7 @@
           <input
             type="number"
             id="inp-principal"
-            placeholder="e.g. 10000"
+            placeholder="e.g. 50000"
             min="0"
             step="any"
             autocomplete="off"
@@ -550,63 +608,87 @@
         <span class="field-hint">Enter 0 to stop adding entries (Java loop-exit condition).</span>
       </div>
 
-      <!-- Time -->
+      <!-- Start Date -->
       <div class="field-group">
-        <label for="inp-months">Time in Months</label>
+        <label for="inp-start-date">Start Date</label>
         <div class="input-wrap">
           <span class="icon" aria-hidden="true">&#128197;</span>
           <input
-            type="number"
-            id="inp-months"
-            placeholder="e.g. 18"
-            min="1"
-            step="1"
+            type="date"
+            id="inp-start-date"
             autocomplete="off"
           />
         </div>
-        <span class="field-hint">Splits into full years (&#247;12) and remaining months (%12).</span>
+        <span class="field-hint">Elapsed months to today are calculated automatically.</span>
+      </div>
+
+    </div>
+
+    <!-- ── Date Preview ──────────────────────────────────────────── -->
+    <div class="date-preview" id="date-preview">
+      <div class="date-preview-title">&#128336; Date Calculation Preview</div>
+
+      <div class="date-grid">
+        <div class="date-cell">
+          <span class="date-cell-label">Start Date</span>
+          <span class="date-cell-value purple" id="preview-start">—</span>
+        </div>
+        <div class="date-cell">
+          <span class="date-cell-label">Current Date</span>
+          <span class="date-cell-value accent" id="preview-today">—</span>
+        </div>
+        <div class="date-cell">
+          <span class="date-cell-label">Months Used (b)</span>
+          <span class="date-cell-value" id="preview-months" style="color:var(--gold); font-size:1.25rem;">—</span>
+        </div>
+      </div>
+
+      <div class="diff-raw" id="diff-raw">
+        Raw difference: <span id="raw-diff-text">—</span>
+        &nbsp;&mdash;&nbsp;
+        <span id="rounding-desc"></span>
+        <br/>
+        <span class="rounding-badge" id="rounding-badge"></span>
       </div>
     </div>
 
-    <!-- Validation alert -->
+    <!-- Alerts -->
     <div class="alert alert-error" id="alert-error" role="alert" aria-live="polite">
       <span>&#9888;&#65039;</span>
       <span id="alert-msg">Please fill in all fields.</span>
     </div>
-
-    <!-- Info alert (principal = 0) -->
     <div class="alert alert-info" id="alert-info" role="status" aria-live="polite">
       <span>&#8505;&#65039;</span>
       <span>Principal is 0 &#8212; entry not added (matches Java loop-exit condition).</span>
     </div>
 
     <div class="btn-row">
-      <button class="btn btn-primary" id="btn-add" type="button">
-        &#43; Add Entry
-      </button>
-      <button class="btn btn-secondary" id="btn-reset" type="button">
-        &#128465; Reset All
-      </button>
+      <button class="btn btn-primary" id="btn-add" type="button">&#43; Add Entry</button>
+      <button class="btn btn-secondary" id="btn-reset" type="button">&#128465; Reset All</button>
     </div>
   </div>
 
-  <!-- Summary Chips -->
+  <!-- ── Summary Chips ───────────────────────────────────────────── -->
   <div class="summary-row" id="summary-row">
     <div class="chip">
       <span class="chip-label">Total Principal</span>
-      <span class="chip-value principal" id="chip-principal">&#8377;0.00</span>
+      <span class="chip-value c-principal" id="chip-principal">0</span>
     </div>
     <div class="chip">
       <span class="chip-label">Total Interest</span>
-      <span class="chip-value interest" id="chip-interest">&#8377;0.00</span>
+      <span class="chip-value c-interest" id="chip-interest">0</span>
+    </div>
+    <div class="chip">
+      <span class="chip-label">Total Months</span>
+      <span class="chip-value c-months" id="chip-months">0</span>
     </div>
     <div class="chip">
       <span class="chip-label">Grand Total Amount</span>
-      <span class="chip-value amount" id="chip-amount">&#8377;0.00</span>
+      <span class="chip-value c-amount" id="chip-amount">0</span>
     </div>
   </div>
 
-  <!-- Table Section -->
+  <!-- ── Table Section ───────────────────────────────────────────── -->
   <div class="table-section glass-card" id="table-section">
     <div class="table-header-row">
       <div class="section-title" style="margin-bottom:0; flex:1;">Calculation Results</div>
@@ -620,145 +702,278 @@
             <th scope="col">#</th>
             <th scope="col">Principal (&#8377;)</th>
             <th scope="col">Interest (&#8377;)</th>
+            <th scope="col" class="th-months">Months (b)</th>
             <th scope="col">Total Amount (&#8377;)</th>
           </tr>
         </thead>
-        <tbody id="table-body">
-        </tbody>
-        <tfoot id="table-footer">
+        <tbody id="table-body"></tbody>
+        <tfoot>
           <tr>
             <td>Grand<br>Totals</td>
-            <td class="tf-principal" id="tf-principal">&#8377;0.00</td>
-            <td class="tf-interest"  id="tf-interest">&#8377;0.00</td>
-            <td class="tf-amount"    id="tf-amount">&#8377;0.00</td>
+            <td class="tf-principal" id="tf-principal">0</td>
+            <td class="tf-interest"  id="tf-interest">0</td>
+            <td class="tf-months"    id="tf-months">0</td>
+            <td class="tf-amount"    id="tf-amount">0</td>
           </tr>
         </tfoot>
       </table>
     </div>
   </div>
 
-  <!-- Footer -->
+  <!-- ── Footer ─────────────────────────────────────────────────── -->
   <footer>
-    Formula: <span>Amount = a &times; 1.18<sup>c</sup> &times; (1 + d &times; 1.5 &divide; 100)</span>
-    &nbsp;|&nbsp; c = &lfloor;months &divide; 12&rfloor;, d = months mod 12 &nbsp;|&nbsp; Interest &amp; Amount displayed via Math.ceil()
+    Formula (Ankur.java): <span>Amount = a &times; 1.18<sup>c</sup> &times; (1 + d &times; 1.5 &divide; 100)</span><br/>
+    c = &lfloor;b &divide; 12&rfloor; &nbsp;|&nbsp; d = b mod 12 &nbsp;|&nbsp;
+    Rounding: leftover 1&ndash;2 days &rarr; ignore &nbsp;&bull;&nbsp; 3+ days &rarr; +1 month &nbsp;|&nbsp;
+    Interest &amp; Amount displayed via Math.ceil()
   </footer>
 
-</div>
+</div><!-- /page-wrapper -->
 
 <script>
   /*
-    Compound Interest Calculator — JS (mirrors Java logic exactly)
+    Compound Interest Calculator
+    Mirrors Ankur.java exactly.
 
-    Ankur.java variables (exact mirror):
-      a = principal           (treated as integer)
-      b = total months        (integer)
-      c = b / 12              (integer division = Math.floor(b / 12))
-      d = b % 12              (double — remaining months)
+    Java formula:
+      int a   = principal (integer input)
+      int b   = total months  ← now derived from date diff + rounding rule
+      int c   = b / 12        (integer division)
+      double d = b % 12       (remaining months)
       amount   = a * Math.pow(1.18, c) * (1 + d * 1.5 / 100)
       interest = amount - a
 
-    Display rules (matching Java output):
-      - Principal : (int) cast  → Math.floor()
-      - Interest  : Math.ceil()
-      - Amount    : Math.ceil()
-      - Totals    : integer accumulation (+=)
+    Display (matching Java print statements):
+      principal : (int) cast   → Math.floor()
+      interest  : Math.ceil()
+      amount    : Math.ceil()
+      totals    : integer sums
 
-    Java loop exits when a == 0 (we show an info alert instead).
+    Date → Months rounding rule:
+      leftover days 1 or 2  → round DOWN (ignore extra days)
+      leftover days 3+       → round UP   (add 1 month)
   */
 
-  const entries = [];
+  /* ── State ──────────────────────────────────────────────────── */
+  var entries = [];   // { principal, interest, months, amount }
 
-  const inpPrincipal    = document.getElementById('inp-principal');
-  const inpMonths       = document.getElementById('inp-months');
-  const btnAdd          = document.getElementById('btn-add');
-  const btnReset        = document.getElementById('btn-reset');
-  const alertError      = document.getElementById('alert-error');
-  const alertMsg        = document.getElementById('alert-msg');
-  const alertInfo       = document.getElementById('alert-info');
-  const summaryRow      = document.getElementById('summary-row');
-  const tableSection    = document.getElementById('table-section');
-  const tableBody       = document.getElementById('table-body');
-  const entryCountBadge = document.getElementById('entry-count-badge');
-  const chipPrincipal   = document.getElementById('chip-principal');
-  const chipInterest    = document.getElementById('chip-interest');
-  const chipAmount      = document.getElementById('chip-amount');
-  const tfPrincipal     = document.getElementById('tf-principal');
-  const tfInterest      = document.getElementById('tf-interest');
-  const tfAmount        = document.getElementById('tf-amount');
+  /* ── DOM refs ───────────────────────────────────────────────── */
+  var inpPrincipal    = document.getElementById('inp-principal');
+  var inpStartDate    = document.getElementById('inp-start-date');
+  var btnAdd          = document.getElementById('btn-add');
+  var btnReset        = document.getElementById('btn-reset');
+  var alertError      = document.getElementById('alert-error');
+  var alertMsg        = document.getElementById('alert-msg');
+  var alertInfo       = document.getElementById('alert-info');
+  var summaryRow      = document.getElementById('summary-row');
+  var tableSection    = document.getElementById('table-section');
+  var tableBody       = document.getElementById('table-body');
+  var entryCountBadge = document.getElementById('entry-count-badge');
 
-  // Format as Indian Rupee
+  // date preview
+  var datePreview     = document.getElementById('date-preview');
+  var previewStart    = document.getElementById('preview-start');
+  var previewToday    = document.getElementById('preview-today');
+  var previewMonths   = document.getElementById('preview-months');
+  var rawDiffText     = document.getElementById('raw-diff-text');
+  var roundingDesc    = document.getElementById('rounding-desc');
+  var roundingBadge   = document.getElementById('rounding-badge');
+
+  // chips
+  var chipPrincipal   = document.getElementById('chip-principal');
+  var chipInterest    = document.getElementById('chip-interest');
+  var chipMonths      = document.getElementById('chip-months');
+  var chipAmount      = document.getElementById('chip-amount');
+
+  // footer totals
+  var tfPrincipal     = document.getElementById('tf-principal');
+  var tfInterest      = document.getElementById('tf-interest');
+  var tfMonths        = document.getElementById('tf-months');
+  var tfAmount        = document.getElementById('tf-amount');
+
+  /* ── Helpers ────────────────────────────────────────────────── */
   function fmt(n) {
-    return '\u20B9' + n.toLocaleString('en-IN', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+    return n.toLocaleString('en-IN');
   }
 
+  // Format a Date object as DD MMM YYYY (e.g. 23 Aug 2026)
+  function fmtDate(d) {
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  // Today at midnight (no time component)
+  function today() {
+    var t = new Date();
+    return new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  }
+
+  /*
+    Date → Months calculation.
+
+    Steps:
+    1. Count whole months between startDate and today.
+    2. Count leftover days.
+    3. Apply rounding rule:
+         leftover 0-2 days → keep whole months (round down)
+         leftover 3+ days  → add 1 month      (round up)
+    Returns { totalMonths, rawYears, rawMonths, rawDays, roundedUp }
+  */
+  function calcMonths(startDate) {
+    var now = today();
+
+    var sy = startDate.getFullYear(), sm = startDate.getMonth(), sd = startDate.getDate();
+    var ny = now.getFullYear(),       nm = now.getMonth(),       nd = now.getDate();
+
+    // Whole months
+    var totalMonths = (ny - sy) * 12 + (nm - sm);
+
+    // Leftover days: advance startDate by totalMonths, then count remaining days
+    var advDate = new Date(sy, sm + totalMonths, sd);
+    var msLeft  = now - advDate;
+    var rawDays = Math.floor(msLeft / (1000 * 60 * 60 * 24));
+
+    // Rounding rule
+    var roundedUp = false;
+    if (rawDays >= 3) {
+      totalMonths += 1;
+      roundedUp = true;
+    }
+
+    // Human-readable raw diff (years + months + days before rounding)
+    var rawYears  = Math.floor(totalMonths / 12);
+    var rawMo     = totalMonths % 12;          // months part (before rounding adds 1)
+    if (roundedUp) {
+      // Recalculate display values using pre-rounded total
+      var preRounded = totalMonths - 1;
+      rawYears = Math.floor(preRounded / 12);
+      rawMo    = preRounded % 12;
+    }
+
+    return {
+      totalMonths : totalMonths,
+      rawYears    : rawYears,
+      rawMonths   : rawMo,
+      rawDays     : rawDays,
+      roundedUp   : roundedUp
+    };
+  }
+
+  /* ── Ankur.java formula (exact) ─────────────────────────────── */
+  function calculate(a, b) {
+    var c = Math.floor(b / 12);                              // int division
+    var d = b % 12;                                          // remaining months (double in Java)
+    var amount   = a * Math.pow(1.18, c) * (1 + d * 1.5 / 100);
+    var interest = amount - a;
+    return { amount: amount, interest: interest };
+  }
+
+  /* Java display rules */
+  function dPrincipal(n) { return Math.floor(n); }
+  function dInterest(n)  { return Math.ceil(n); }
+  function dAmount(n)    { return Math.ceil(n); }
+
+  /* ── Live date preview (fires on date change) ───────────────── */
+  inpStartDate.addEventListener('change', function() {
+    var val = inpStartDate.value;
+    if (!val) { datePreview.classList.remove('show'); return; }
+
+    // Parse date as local (avoid UTC offset issues)
+    var parts = val.split('-');
+    var startDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    var now = today();
+
+    if (startDate > now) {
+      datePreview.classList.remove('show');
+      return;
+    }
+
+    var info = calcMonths(startDate);
+
+    previewStart.textContent  = fmtDate(startDate);
+    previewToday.textContent  = fmtDate(now);
+    previewMonths.textContent = info.totalMonths + ' mo';
+
+    // Raw difference string
+    var parts2 = [];
+    if (info.rawYears  > 0) parts2.push(info.rawYears  + (info.rawYears  === 1 ? ' year'  : ' years'));
+    if (info.rawMonths > 0) parts2.push(info.rawMonths + (info.rawMonths === 1 ? ' month' : ' months'));
+    if (info.rawDays   > 0) parts2.push(info.rawDays   + (info.rawDays   === 1 ? ' day'   : ' days'));
+    rawDiffText.innerHTML = '<span>' + (parts2.join(', ') || '0 days') + '</span>';
+
+    if (info.roundedUp) {
+      roundingDesc.innerHTML = 'Days &ge; 3 &rarr; rounded <span class="months-final">up</span> to ' + info.totalMonths + ' months';
+      roundingBadge.textContent = '↑ Rounded up (+1 month)';
+      roundingBadge.className = 'rounding-badge round-up';
+    } else {
+      roundingDesc.innerHTML = 'Days &le; 2 &rarr; leftover days <span class="months-final">ignored</span>, using ' + info.totalMonths + ' months';
+      roundingBadge.textContent = '↓ Rounded down (days ignored)';
+      roundingBadge.className = 'rounding-badge round-down';
+    }
+
+    datePreview.classList.add('show');
+  });
+
+  /* ── Alert helpers ──────────────────────────────────────────── */
   function clearAlerts() {
     alertError.classList.remove('show');
     alertInfo.classList.remove('show');
   }
-
   function showError(msg) {
     alertMsg.textContent = msg;
     alertError.classList.add('show');
     alertInfo.classList.remove('show');
   }
 
-  // Exact Ankur.java formula
-  // int c = b / 12;  double d = b % 12;
-  // amount = a * Math.pow(1.18, c) * (1 + d * 1.5 / 100)
-  function calculate(a, b) {
-    var c = Math.floor(b / 12);                          // whole years  (int division)
-    var d = b % 12;                                      // remaining months (double in Java)
-    var amount   = a * Math.pow(1.18, c) * (1 + d * 1.5 / 100);
-    var interest = amount - a;
-    return { amount: amount, interest: interest };
-  }
-
-  // Java display helpers
-  // principal: (int) cast  → Math.floor
-  // interest & amount: Math.ceil
-  function displayPrincipal(n) { return Math.floor(n); }
-  function displayInterest(n)  { return Math.ceil(n); }
-  function displayAmount(n)    { return Math.ceil(n); }
-
+  /* ── Add entry ──────────────────────────────────────────────── */
   function addEntry() {
     clearAlerts();
 
     var rawA = inpPrincipal.value.trim();
-    var rawB = inpMonths.value.trim();
+    var rawD = inpStartDate.value;
 
     if (rawA === '') { showError('Please enter a Principal amount.'); inpPrincipal.focus(); return; }
-    if (rawB === '') { showError('Please enter Time in Months.');     inpMonths.focus();    return; }
+    if (!rawD)       { showError('Please select a Start Date.');      inpStartDate.focus(); return; }
 
     var a = parseFloat(rawA);
-    var b = parseInt(rawB, 10);
+    if (isNaN(a) || a < 0) { showError('Principal must be a non-negative number.'); inpPrincipal.focus(); return; }
 
-    if (isNaN(a) || a < 0)    { showError('Principal must be a non-negative number.'); inpPrincipal.focus(); return; }
-    if (isNaN(b) || b <= 0)   { showError('Time in Months must be a positive integer.'); inpMonths.focus(); return; }
-
-    // Java exit condition: principal == 0 means stop
+    // Java exit condition
     if (a === 0) {
       alertInfo.classList.add('show');
       inpPrincipal.value = '';
-      inpMonths.value    = '';
+      inpStartDate.value = '';
+      datePreview.classList.remove('show');
       inpPrincipal.focus();
       return;
     }
 
+    // Parse start date
+    var parts = rawD.split('-');
+    var startDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    var now = today();
+
+    if (startDate > now) { showError('Start Date cannot be in the future.'); inpStartDate.focus(); return; }
+
+    var info   = calcMonths(startDate);
+    var b      = info.totalMonths;
+
+    if (b <= 0) { showError('Start Date must be at least 1 month before today.'); inpStartDate.focus(); return; }
+
     var result = calculate(a, b);
-    // Store raw floats; display rounding is applied in renderTable/updateSummary
-    entries.push({ principal: a, interest: result.interest, amount: result.amount });
+    entries.push({ principal: a, interest: result.interest, months: b, amount: result.amount });
 
     renderTable();
     updateSummary();
 
+    // Clear inputs
     inpPrincipal.value = '';
-    inpMonths.value    = '';
+    inpStartDate.value = '';
+    datePreview.classList.remove('show');
     inpPrincipal.focus();
   }
 
+  /* ── Render table ───────────────────────────────────────────── */
   function renderTable() {
     tableSection.classList.add('show');
     summaryRow.classList.add('show');
@@ -767,12 +982,12 @@
     entries.forEach(function(e, i) {
       var tr = document.createElement('tr');
       tr.className = 'new-row-animate';
-      // Match Java output: (int)principal + (int)ceil(interest) = (int)ceil(amount)
       tr.innerHTML =
         '<td>' + (i + 1) + '</td>' +
-        '<td class="td-principal">' + displayPrincipal(e.principal).toLocaleString('en-IN') + '</td>' +
-        '<td class="td-interest">'  + displayInterest(e.interest).toLocaleString('en-IN')  + '</td>' +
-        '<td class="td-amount">'    + displayAmount(e.amount).toLocaleString('en-IN')    + '</td>';
+        '<td class="td-principal">' + fmt(dPrincipal(e.principal)) + '</td>' +
+        '<td class="td-interest">'  + fmt(dInterest(e.interest))   + '</td>' +
+        '<td class="td-months">'    + e.months                     + '</td>' +
+        '<td class="td-amount">'    + fmt(dAmount(e.amount))        + '</td>';
       tableBody.appendChild(tr);
     });
 
@@ -780,42 +995,53 @@
     entryCountBadge.textContent = n === 1 ? '1 entry' : n + ' entries';
   }
 
+  /* ── Update summary chips + footer totals ───────────────────── */
   function updateSummary() {
-    // Java: principle += list.get(i); interest += list.get(i+1); amount += list.get(i+2);
-    // All are integer additions (implicit truncation via int accumulator)
     var totP = entries.reduce(function(s, e) { return s + Math.floor(e.principal); }, 0);
     var totI = entries.reduce(function(s, e) { return s + Math.ceil(e.interest);   }, 0);
+    var totM = entries.reduce(function(s, e) { return s + e.months;                }, 0);
     var totA = entries.reduce(function(s, e) { return s + Math.ceil(e.amount);     }, 0);
 
-    chipPrincipal.textContent = totP.toLocaleString('en-IN');
-    chipInterest.textContent  = totI.toLocaleString('en-IN');
-    chipAmount.textContent    = totA.toLocaleString('en-IN');
+    chipPrincipal.textContent = fmt(totP);
+    chipInterest.textContent  = fmt(totI);
+    chipMonths.textContent    = totM;
+    chipAmount.textContent    = fmt(totA);
 
-    tfPrincipal.textContent = totP.toLocaleString('en-IN');
-    tfInterest.textContent  = totI.toLocaleString('en-IN');
-    tfAmount.textContent    = totA.toLocaleString('en-IN');
+    tfPrincipal.textContent = fmt(totP);
+    tfInterest.textContent  = fmt(totI);
+    tfMonths.textContent    = totM;
+    tfAmount.textContent    = fmt(totA);
   }
 
+  /* ── Reset ──────────────────────────────────────────────────── */
   function resetAll() {
     entries.length = 0;
     tableBody.innerHTML = '';
     tableSection.classList.remove('show');
     summaryRow.classList.remove('show');
+    datePreview.classList.remove('show');
     clearAlerts();
     updateSummary();
     inpPrincipal.value = '';
-    inpMonths.value    = '';
+    inpStartDate.value = '';
     inpPrincipal.focus();
   }
 
+  /* ── Event listeners ────────────────────────────────────────── */
   btnAdd.addEventListener('click', addEntry);
   btnReset.addEventListener('click', resetAll);
 
-  [inpPrincipal, inpMonths].forEach(function(el) {
-    el.addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') addEntry();
-    });
-  });
+  inpPrincipal.addEventListener('keydown', function(e) { if (e.key === 'Enter') addEntry(); });
+  // Pressing Enter on the date field also submits
+  inpStartDate.addEventListener('keydown', function(e) { if (e.key === 'Enter') addEntry(); });
+
+  /* ── Set max date on date picker to today ───────────────────── */
+  (function() {
+    var t = today();
+    var mm = String(t.getMonth() + 1).padStart(2, '0');
+    var dd = String(t.getDate()).padStart(2, '0');
+    inpStartDate.setAttribute('max', t.getFullYear() + '-' + mm + '-' + dd);
+  })();
 
   inpPrincipal.focus();
 </script>
