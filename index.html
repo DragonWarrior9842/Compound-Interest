@@ -1,419 +1,144 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CompoundCalc — Multi-Rate Interest Calculator</title>
-  <meta name="description" content="Multi-rate compound interest SPA with monthly (1%) and semi-annual (1.75%–5%) compounding, auto date-based month calculation." />
+  <title>CompoundCalc - Multi-Rate Interest Calculator</title>
+  <meta name="description" content="Multi-rate compound interest SPA with monthly (1%), annual (1.5%), and semi-annual (1.75%-5%) compounding, auto date-based or manual month calculation." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
-
   <style>
-    /* ── Design Tokens ─────────────────────────────────────────── */
     :root {
-      /* Overridden dynamically per tab */
-      --accent:       #38bdf8;
-      --accent-dim:   rgba(56,189,248,0.15);
-      --accent-glow:  rgba(56,189,248,0.35);
-      --border-focus: rgba(56,189,248,0.55);
-      --bg-glow:      rgba(56,189,248,0.06);
-      --shadow-glow:  0 0 24px rgba(56,189,248,0.18);
-      --row-hover:    rgba(56,189,248,0.06);
-
-      /* Fixed */
-      --bg-base:        #080d1a;
-      --bg-card:        rgba(255,255,255,0.04);
-      --bg-nav:         rgba(8,13,26,0.90);
-      --border:         rgba(255,255,255,0.08);
-      --gold:           #f5c842;
-      --gold-dim:       rgba(245,200,66,0.12);
-      --purple:         #a78bfa;
-      --text-primary:   #e8f0fe;
-      --text-secondary: #7a8fb5;
-      --text-muted:     #4a5678;
-      --danger:         #ff5f6d;
-      --row-alt:        rgba(255,255,255,0.025);
-      --radius-sm:      8px;
-      --radius-md:      14px;
-      --radius-lg:      20px;
-      --nav-h:          60px;
-      --shadow-card:    0 8px 32px rgba(0,0,0,0.45);
-      --transition:     0.22s cubic-bezier(0.4,0,0.2,1);
+      --accent:#38bdf8; --accent-dim:rgba(56,189,248,0.15); --accent-glow:rgba(56,189,248,0.35);
+      --border-focus:rgba(56,189,248,0.55); --bg-glow:rgba(56,189,248,0.06);
+      --shadow-glow:0 0 24px rgba(56,189,248,0.18); --row-hover:rgba(56,189,248,0.06);
+      --bg-base:#080d1a; --bg-card:rgba(255,255,255,0.04); --bg-nav:rgba(8,13,26,0.90);
+      --border:rgba(255,255,255,0.08); --gold:#f5c842; --gold-dim:rgba(245,200,66,0.12);
+      --purple:#a78bfa; --text-primary:#e8f0fe; --text-secondary:#7a8fb5; --text-muted:#4a5678;
+      --danger:#ff5f6d; --row-alt:rgba(255,255,255,0.025); --radius-sm:8px; --radius-md:14px;
+      --radius-lg:20px; --nav-h:60px; --shadow-card:0 8px 32px rgba(0,0,0,0.45);
+      --transition:0.22s cubic-bezier(0.4,0,0.2,1);
     }
-
-    /* ── Reset ──────────────────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--bg-base);
-      color: var(--text-primary);
-      min-height: 100vh;
-      overflow-x: hidden;
-      padding-top: var(--nav-h);
-    }
-
-    /* ── Animated Background ─────────────────────────────────────── */
-    body::before {
-      content: '';
-      position: fixed; inset: 0;
-      background-image:
-        linear-gradient(rgba(255,255,255,0.013) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.013) 1px, transparent 1px);
-      background-size: 44px 44px;
-      pointer-events: none; z-index: 0;
-    }
-    body::after {
-      content: '';
-      position: fixed;
-      top: -30%; left: -10%; width: 65%; height: 65%;
-      background: radial-gradient(ellipse at center, var(--bg-glow) 0%, transparent 70%);
-      pointer-events: none; z-index: 0;
-      animation: pulse-bg 9s ease-in-out infinite alternate;
-      transition: background 0.5s ease;
-    }
-    @keyframes pulse-bg {
-      from { opacity: 0.5; transform: scale(1); }
-      to   { opacity: 1;   transform: scale(1.1); }
-    }
-
-    /* ── Nav / Tab Bar ───────────────────────────────────────────── */
-    #main-nav {
-      position: fixed; top: 0; left: 0; right: 0;
-      height: var(--nav-h); z-index: 200;
-      background: var(--bg-nav);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-bottom: 1px solid var(--border);
-    }
-    .nav-inner {
-      max-width: 1060px; margin: 0 auto;
-      padding: 0 1.25rem; height: 100%;
-      display: flex; align-items: center; gap: 1rem;
-    }
-    .nav-brand {
-      display: flex; align-items: center; gap: 0.5rem;
-      font-weight: 800; font-size: 0.92rem;
-      color: var(--text-primary); text-decoration: none;
-      flex-shrink: 0; letter-spacing: -0.01em;
-    }
-    .nav-brand .brand-icon { font-size: 1.1rem; }
-    .nav-brand .brand-hi { color: var(--accent); transition: color 0.4s ease; }
-    .nav-sep { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
-
-    .tab-list {
-      display: flex; align-items: center; gap: 0.2rem;
-      overflow-x: auto; flex: 1;
-      scrollbar-width: none; -ms-overflow-style: none;
-    }
-    .tab-list::-webkit-scrollbar { display: none; }
-
-    .tab-btn {
-      display: inline-flex; align-items: center; gap: 0.4rem;
-      padding: 0.38rem 0.85rem;
-      border-radius: 100px;
-      font-family: 'Inter', sans-serif;
-      font-size: 0.79rem; font-weight: 600;
-      color: var(--text-muted);
-      background: transparent;
-      border: 1px solid transparent;
-      cursor: pointer; white-space: nowrap;
-      transition: all var(--transition);
-    }
-    .tab-btn:hover { color: var(--text-secondary); background: rgba(255,255,255,0.05); }
-    .tab-btn.active {
-      background: var(--accent-dim);
-      border-color: var(--border-focus);
-      color: var(--accent);
-    }
-    .tab-freq-dot {
-      width: 5px; height: 5px; border-radius: 50%;
-      background: currentColor; opacity: 0.6;
-      flex-shrink: 0;
-    }
-
-    /* ── Page Wrapper ────────────────────────────────────────────── */
-    .page-wrapper {
-      position: relative; z-index: 1;
-      max-width: 1060px; margin: 0 auto;
-      padding: 2rem 1.25rem 4rem;
-    }
-
-    /* ── Header ──────────────────────────────────────────────────── */
-    header {
-      text-align: center; margin-bottom: 2rem;
-      animation: fade-down 0.55s ease both;
-    }
-    .header-badge {
-      display: inline-flex; align-items: center; gap: 0.5rem;
-      background: var(--accent-dim);
-      border: 1px solid var(--border-focus);
-      border-radius: 100px;
-      padding: 0.32rem 1rem;
-      font-size: 0.73rem; font-weight: 700;
-      letter-spacing: 0.09em; color: var(--accent);
-      text-transform: uppercase; margin-bottom: 0.9rem;
-      transition: background 0.4s ease, border-color 0.4s ease, color 0.4s ease;
-    }
-    .badge-rate { font-size: 0.95rem; font-weight: 900; }
-    header h1 {
-      font-size: clamp(1.7rem, 4.5vw, 2.6rem); font-weight: 800;
-      background: linear-gradient(135deg, #fff 20%, var(--accent) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text; line-height: 1.15; letter-spacing: -0.025em;
-      transition: --accent 0.4s ease;
-    }
-
-    /* ── Compounding Frequency Text ──────────────────────────────── */
-    .freq-banner {
-      display: inline-flex; align-items: center; gap: 0.55rem;
-      margin: 0.9rem auto 0;
-      padding: 0.45rem 1.15rem;
-      border-radius: 100px;
-      font-size: 0.8rem; font-weight: 600;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.03);
-      color: var(--text-secondary);
-      transition: all 0.4s ease;
-      letter-spacing: 0.01em;
-    }
-    .freq-banner .freq-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--accent);
-      flex-shrink: 0;
-      animation: blink 2.5s ease-in-out infinite;
-      transition: background 0.4s ease;
-    }
-    @keyframes blink {
-      0%,100% { opacity: 1; }
-      50%      { opacity: 0.35; }
-    }
-    .freq-banner strong { color: var(--accent); transition: color 0.4s ease; }
-
-    /* ── Glass Card ──────────────────────────────────────────────── */
-    .glass-card {
-      background: var(--bg-card);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow-card);
-      padding: 1.75rem;
-      transition: border-color var(--transition), box-shadow var(--transition);
-    }
-    .glass-card:hover {
-      border-color: rgba(255,255,255,0.12);
-      box-shadow: var(--shadow-card), var(--shadow-glow);
-    }
-
-    /* ── Section Title ───────────────────────────────────────────── */
-    .section-title {
-      font-size: 0.71rem; font-weight: 700;
-      letter-spacing: 0.11em; text-transform: uppercase;
-      color: var(--accent); margin-bottom: 1.2rem;
-      display: flex; align-items: center; gap: 0.5rem;
-      transition: color 0.4s ease;
-    }
-    .section-title::after {
-      content: ''; flex: 1; height: 1px;
-      background: linear-gradient(90deg, var(--border-focus), transparent);
-      transition: background 0.4s ease;
-    }
-
-    /* ── Input Section ───────────────────────────────────────────── */
-    .input-section { margin-bottom: 1.5rem; }
-
-    .form-grid-3 {
-      display: grid; grid-template-columns: repeat(3,1fr); gap: 1.15rem;
-    }
-    @media (max-width: 680px) { .form-grid-3 { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 440px) { .form-grid-3 { grid-template-columns: 1fr; } }
-
-    .field-group { display: flex; flex-direction: column; gap: 0.42rem; }
-    .field-group label { font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); letter-spacing: 0.03em; }
-    .input-wrap { position: relative; display: flex; align-items: center; }
-    .input-wrap .icon {
-      position: absolute; left: 0.85rem;
-      font-size: 0.88rem; color: var(--text-muted);
-      pointer-events: none; transition: color var(--transition); z-index: 1;
-    }
-    .input-wrap:focus-within .icon { color: var(--accent); }
-
-    .field-group input[type="number"],
-    .field-group input[type="date"] {
-      width: 100%;
-      padding: 0.7rem 0.9rem 0.7rem 2.35rem;
-      background: rgba(255,255,255,0.04);
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      color: var(--text-primary);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.92rem; font-weight: 500;
-      outline: none;
-      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
-      color-scheme: dark;
-    }
-    .field-group input[type="date"]::-webkit-calendar-picker-indicator {
-      filter: brightness(0.65) sepia(1) saturate(6) hue-rotate(140deg); cursor: pointer;
-    }
-    .field-group input:focus {
-      border-color: var(--border-focus);
-      background: rgba(255,255,255,0.06);
-      box-shadow: 0 0 0 3px var(--accent-dim);
-    }
-    .field-hint { font-size: 0.69rem; color: var(--text-muted); line-height: 1.4; }
-
-    /* ── Date Preview ────────────────────────────────────────────── */
-    .date-preview {
-      display: none; margin-top: 1.3rem;
-      border: 1px solid rgba(167,139,250,0.28);
-      border-radius: var(--radius-md);
-      background: rgba(167,139,250,0.05);
-      padding: 1.1rem 1.3rem;
-    }
-    .date-preview.show { display: block; animation: expand-in 0.3s cubic-bezier(0.34,1.56,0.64,1) both; }
-    @keyframes expand-in {
-      from { opacity: 0; transform: scaleY(0.88); transform-origin: top; }
-      to   { opacity: 1; transform: scaleY(1); }
-    }
-    .dp-title { font-size: 0.67rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--purple); margin-bottom: 0.9rem; }
-    .dp-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.7rem; margin-bottom: 0.85rem; }
-    @media (max-width: 480px) { .dp-grid { grid-template-columns: 1fr 1fr; } }
-    .dp-cell-label { font-size: 0.63rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 0.2rem; }
-    .dp-cell-value { font-size: 0.9rem; font-weight: 600; }
-    .v-purple { color: var(--purple); }
-    .v-accent  { color: var(--accent); transition: color 0.4s ease; }
-    .v-gold    { color: var(--gold); font-size: 1.05rem; font-weight: 800; }
-    .dp-rule { padding-top: 0.75rem; border-top: 1px solid var(--border); font-size: 0.78rem; color: var(--text-secondary); line-height: 1.55; }
-    .dp-rule strong { color: var(--purple); }
-    .dp-rule .hi { color: var(--accent); font-weight: 700; transition: color 0.4s ease; }
-    .rounding-badge {
-      display: inline-flex; align-items: center; gap: 0.3rem;
-      margin-top: 0.48rem; padding: 0.2rem 0.68rem;
-      border-radius: 100px; font-size: 0.68rem; font-weight: 700;
-    }
-    .rounding-badge.down { background: rgba(74,86,120,0.3); border: 1px solid rgba(74,86,120,0.45); color: var(--text-secondary); }
-    .rounding-badge.up   { background: var(--accent-dim); border: 1px solid var(--border-focus); color: var(--accent); }
-
-    /* ── Buttons ─────────────────────────────────────────────────── */
-    .btn-row { display: flex; gap: 0.8rem; margin-top: 1.4rem; flex-wrap: wrap; }
-    .btn {
-      display: inline-flex; align-items: center; gap: 0.42rem;
-      padding: 0.68rem 1.35rem;
-      border-radius: var(--radius-sm);
-      font-family: 'Inter', sans-serif;
-      font-size: 0.86rem; font-weight: 600;
-      cursor: pointer; border: none;
-      transition: all var(--transition); letter-spacing: 0.01em;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary {
-      background: var(--accent); color: #06101f;
-      box-shadow: 0 4px 18px var(--accent-glow);
-      transition: background 0.4s ease, box-shadow 0.4s ease, filter var(--transition), transform var(--transition);
-    }
-    .btn-primary:hover { filter: brightness(1.1); box-shadow: 0 6px 26px var(--accent-glow); transform: translateY(-1px); }
-    .btn-secondary {
-      background: rgba(255,255,255,0.05); color: var(--text-secondary);
-      border: 1.5px solid var(--border);
-    }
-    .btn-secondary:hover { color: var(--danger); border-color: rgba(255,95,109,0.4); background: rgba(255,95,109,0.07); }
-
-    /* ── Alerts ──────────────────────────────────────────────────── */
-    .alert { display: none; align-items: center; gap: 0.55rem; padding: 0.65rem 1rem; border-radius: var(--radius-sm); font-size: 0.82rem; font-weight: 500; margin-top: 1rem; }
-    .alert.show { display: flex; animation: shake 0.33s ease; }
-    .alert-error { background: rgba(255,95,109,0.1); border: 1px solid rgba(255,95,109,0.35); color: var(--danger); }
-    .alert-info  { background: var(--accent-dim); border: 1px solid var(--border-focus); color: var(--accent); }
-    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-5px)} 75%{transform:translateX(5px)} }
-
-    /* ── Summary Chips ───────────────────────────────────────────── */
-    .summary-row { display: none; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.5rem; }
-    .summary-row.show { display: grid; animation: fade-up 0.4s ease both; }
-    @media (max-width: 680px) { .summary-row { grid-template-columns: repeat(2,1fr); } }
-    @media (max-width: 380px) { .summary-row { grid-template-columns: 1fr; } }
-
-    .chip {
-      background: var(--bg-card); border: 1px solid var(--border);
-      border-radius: var(--radius-md); padding: 0.95rem 1.1rem;
-      display: flex; flex-direction: column; gap: 0.25rem;
-      transition: all var(--transition);
-    }
-    .chip:hover { border-color: var(--border-focus); box-shadow: var(--shadow-glow); }
-    .chip-label { font-size: 0.63rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-muted); }
-    .chip-value { font-size: 1.15rem; font-weight: 800; letter-spacing: -0.02em; }
-    .c-p { color: var(--text-primary); }
-    .c-m { color: var(--purple); }
-    .c-i { color: var(--accent); transition: color 0.4s ease; }
-    .c-a { color: var(--gold); }
-
-    /* ── Table ───────────────────────────────────────────────────── */
-    .table-section { display: none; animation: fade-up 0.45s ease both; }
-    .table-section.show { display: block; }
-
-    .table-header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-    .entry-badge {
-      display: inline-flex; align-items: center;
-      background: var(--accent-dim); border: 1px solid var(--border-focus);
-      border-radius: 100px; padding: 0.2rem 0.75rem;
-      font-size: 0.73rem; font-weight: 700; color: var(--accent);
-      transition: background 0.4s ease, border-color 0.4s ease, color 0.4s ease;
-    }
-    .table-scroll { overflow-x: auto; border-radius: var(--radius-md); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-
-    thead tr { background: linear-gradient(135deg, var(--accent-dim) 0%, rgba(255,255,255,0.02) 100%); }
-    thead th {
-      padding: 0.82rem 0.95rem;
-      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
-      color: var(--accent); border-bottom: 1px solid var(--border-focus);
-      white-space: nowrap; text-align: right;
-      transition: color 0.4s ease;
-    }
-    thead th:first-child { text-align: center; }
-    thead th.th-m { color: var(--purple); text-align: center; }
-
-    tbody tr { border-bottom: 1px solid var(--border); transition: background var(--transition); }
-    tbody tr:nth-child(even) { background: var(--row-alt); }
-    tbody tr:hover { background: var(--row-hover); }
-    tbody tr.anim { animation: row-pop 0.32s cubic-bezier(0.34,1.56,0.64,1) both; }
-    @keyframes row-pop { from{opacity:0;transform:translateY(-6px) scale(0.987)} to{opacity:1;transform:translateY(0) scale(1)} }
-
-    tbody td { padding: 0.7rem 0.95rem; text-align: right; color: var(--text-secondary); font-variant-numeric: tabular-nums; white-space: nowrap; }
-    tbody td:first-child { text-align: center; color: var(--text-muted); font-weight: 700; font-size: 0.75rem; }
-    .td-p { color: var(--text-primary) !important; font-weight: 600 !important; }
-    .td-m { color: var(--purple) !important; font-weight: 600 !important; text-align: center !important; }
-    .td-i { color: var(--accent) !important; transition: color 0.4s ease; }
-    .td-a { color: var(--gold) !important; font-weight: 600 !important; }
-
-    tfoot tr { background: linear-gradient(135deg, var(--gold-dim, rgba(245,200,66,0.12)) 0%, transparent 100%); border-top: 2px solid rgba(245,200,66,0.32); }
-    tfoot td { padding: 0.88rem 0.95rem; text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
-    tfoot td:first-child { text-align: center; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; color: var(--gold); }
-    .tf-p { color: var(--text-primary); }
-    .tf-m { color: var(--purple); text-align: center !important; }
-    .tf-i { color: var(--accent); transition: color 0.4s ease; }
-    .tf-a { color: var(--gold); font-size: 0.94rem; }
-
-    /* ── Footer ──────────────────────────────────────────────────── */
-    footer { text-align: center; margin-top: 2.5rem; color: var(--text-muted); font-size: 0.7rem; letter-spacing: 0.04em; line-height: 2; }
-    footer .f-a { color: var(--accent); transition: color 0.4s ease; }
-
-    /* ── Animations ──────────────────────────────────────────────── */
-    @keyframes fade-down { from{opacity:0;transform:translateY(-16px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes fade-up   { from{opacity:0;transform:translateY(16px)}  to{opacity:1;transform:translateY(0)} }
-
-    /* ── Misc ────────────────────────────────────────────────────── */
-    input[type=number]::-webkit-inner-spin-button,
-    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--accent-dim); border-radius: 10px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--accent-glow); }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Inter',sans-serif;background:var(--bg-base);color:var(--text-primary);min-height:100vh;overflow-x:hidden;padding-top:var(--nav-h)}
+    body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,255,255,0.013)1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.013)1px,transparent 1px);background-size:44px 44px;pointer-events:none;z-index:0}
+    body::after{content:'';position:fixed;top:-30%;left:-10%;width:65%;height:65%;background:radial-gradient(ellipse at center,var(--bg-glow)0%,transparent 70%);pointer-events:none;z-index:0;animation:pulse-bg 9s ease-in-out infinite alternate;transition:background 0.5s ease}
+    @keyframes pulse-bg{from{opacity:0.5;transform:scale(1)}to{opacity:1;transform:scale(1.1)}}
+    #main-nav{position:fixed;top:0;left:0;right:0;height:var(--nav-h);z-index:200;background:var(--bg-nav);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1060px;margin:0 auto;padding:0 1.25rem;height:100%;display:flex;align-items:center;gap:1rem}
+    .nav-brand{display:flex;align-items:center;gap:0.5rem;font-weight:800;font-size:0.92rem;color:var(--text-primary);text-decoration:none;flex-shrink:0;letter-spacing:-0.01em}
+    .nav-brand .brand-icon{font-size:1.1rem}
+    .nav-brand .brand-hi{color:var(--accent);transition:color 0.4s ease}
+    .nav-sep{width:1px;height:18px;background:var(--border);flex-shrink:0}
+    .tab-list{display:flex;align-items:center;gap:0.2rem;overflow-x:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none}
+    .tab-list::-webkit-scrollbar{display:none}
+    .tab-btn{display:inline-flex;align-items:center;gap:0.4rem;padding:0.38rem 0.85rem;border-radius:100px;font-family:'Inter',sans-serif;font-size:0.79rem;font-weight:600;color:var(--text-muted);background:transparent;border:1px solid transparent;cursor:pointer;white-space:nowrap;transition:all var(--transition)}
+    .tab-btn:hover{color:var(--text-secondary);background:rgba(255,255,255,0.05)}
+    .tab-btn.active{background:var(--accent-dim);border-color:var(--border-focus);color:var(--accent)}
+    .tab-freq-dot{width:5px;height:5px;border-radius:50%;background:currentColor;opacity:0.6;flex-shrink:0}
+    .page-wrapper{position:relative;z-index:1;max-width:1060px;margin:0 auto;padding:2rem 1.25rem 4rem}
+    header{text-align:center;margin-bottom:2rem;animation:fade-down 0.55s ease both}
+    .header-badge{display:inline-flex;align-items:center;gap:0.5rem;background:var(--accent-dim);border:1px solid var(--border-focus);border-radius:100px;padding:0.32rem 1rem;font-size:0.73rem;font-weight:700;letter-spacing:0.09em;color:var(--accent);text-transform:uppercase;margin-bottom:0.9rem;transition:background 0.4s ease,border-color 0.4s ease,color 0.4s ease}
+    .badge-rate{font-size:0.95rem;font-weight:900}
+    header h1{font-size:clamp(1.7rem,4.5vw,2.6rem);font-weight:800;background:linear-gradient(135deg,#fff 20%,var(--accent)100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.15;letter-spacing:-0.025em}
+    .freq-banner{display:inline-flex;align-items:center;gap:0.55rem;margin:0.9rem auto 0;padding:0.45rem 1.15rem;border-radius:100px;font-size:0.8rem;font-weight:600;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text-secondary);transition:all 0.4s ease;letter-spacing:0.01em}
+    .freq-banner .freq-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:blink 2.5s ease-in-out infinite;transition:background 0.4s ease}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:0.35}}
+    .freq-banner strong{color:var(--accent);transition:color 0.4s ease}
+    .glass-card{background:var(--bg-card);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-card);padding:1.75rem;transition:border-color var(--transition),box-shadow var(--transition)}
+    .glass-card:hover{border-color:rgba(255,255,255,0.12);box-shadow:var(--shadow-card),var(--shadow-glow)}
+    .section-title{font-size:0.71rem;font-weight:700;letter-spacing:0.11em;text-transform:uppercase;color:var(--accent);margin-bottom:1.2rem;display:flex;align-items:center;gap:0.5rem;transition:color 0.4s ease}
+    .section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border-focus),transparent);transition:background 0.4s ease}
+    .input-section{margin-bottom:1.5rem}
+    .input-mode-toggle{display:flex;gap:0.4rem;margin-bottom:1.25rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.3rem}
+    .mode-btn{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:0.45rem;padding:0.52rem 0.9rem;border-radius:calc(var(--radius-sm) - 2px);font-family:'Inter',sans-serif;font-size:0.78rem;font-weight:600;color:var(--text-muted);background:transparent;border:none;cursor:pointer;transition:all var(--transition);letter-spacing:0.01em;white-space:nowrap}
+    .mode-btn:hover{color:var(--text-secondary);background:rgba(255,255,255,0.05)}
+    .mode-btn.active{background:var(--accent-dim);color:var(--accent);box-shadow:0 0 0 1px var(--border-focus) inset}
+    .form-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.15rem}
+    @media(max-width:680px){.form-grid-3{grid-template-columns:1fr 1fr}}
+    @media(max-width:440px){.form-grid-3{grid-template-columns:1fr}}
+    .field-group{display:flex;flex-direction:column;gap:0.42rem}
+    .field-group label{font-size:0.76rem;font-weight:600;color:var(--text-secondary);letter-spacing:0.03em}
+    .input-wrap{position:relative;display:flex;align-items:center}
+    .input-wrap .icon{position:absolute;left:0.85rem;font-size:0.88rem;color:var(--text-muted);pointer-events:none;transition:color var(--transition);z-index:1}
+    .input-wrap:focus-within .icon{color:var(--accent)}
+    .field-group input[type="number"],.field-group input[type="date"]{width:100%;padding:0.7rem 0.9rem 0.7rem 2.35rem;background:rgba(255,255,255,0.04);border:1.5px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:'Inter',sans-serif;font-size:0.92rem;font-weight:500;outline:none;transition:border-color var(--transition),box-shadow var(--transition),background var(--transition);color-scheme:dark}
+    .field-group input[type="date"]::-webkit-calendar-picker-indicator{filter:brightness(0.65)sepia(1)saturate(6)hue-rotate(140deg);cursor:pointer}
+    .field-group input:focus{border-color:var(--border-focus);background:rgba(255,255,255,0.06);box-shadow:0 0 0 3px var(--accent-dim)}
+    .field-hint{font-size:0.69rem;color:var(--text-muted);line-height:1.4}
+    #date-fields-row{display:grid;grid-template-columns:1fr 1fr;gap:1.15rem}
+    @media(max-width:440px){#date-fields-row{grid-template-columns:1fr}}
+    #date-fields-row.hidden{display:none}
+    #manual-months-row{display:none}
+    #manual-months-row.show{display:grid;grid-template-columns:repeat(3,1fr);gap:1.15rem}
+    @media(max-width:680px){#manual-months-row.show{grid-template-columns:1fr 1fr}}
+    @media(max-width:440px){#manual-months-row.show{grid-template-columns:1fr}}
+    .date-preview{display:none;margin-top:1.3rem;border:1px solid rgba(167,139,250,0.28);border-radius:var(--radius-md);background:rgba(167,139,250,0.05);padding:1.1rem 1.3rem}
+    .date-preview.show{display:block;animation:expand-in 0.3s cubic-bezier(0.34,1.56,0.64,1)both}
+    @keyframes expand-in{from{opacity:0;transform:scaleY(0.88);transform-origin:top}to{opacity:1;transform:scaleY(1)}}
+    .dp-title{font-size:0.67rem;font-weight:800;letter-spacing:0.1em;text-transform:uppercase;color:var(--purple);margin-bottom:0.9rem}
+    .dp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.7rem;margin-bottom:0.85rem}
+    @media(max-width:480px){.dp-grid{grid-template-columns:1fr 1fr}}
+    .dp-cell-label{font-size:0.63rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.2rem}
+    .dp-cell-value{font-size:0.9rem;font-weight:600}
+    .v-purple{color:var(--purple)}.v-accent{color:var(--accent);transition:color 0.4s ease}.v-gold{color:var(--gold);font-size:1.05rem;font-weight:800}
+    .dp-rule{padding-top:0.75rem;border-top:1px solid var(--border);font-size:0.78rem;color:var(--text-secondary);line-height:1.55}
+    .dp-rule strong{color:var(--purple)}.dp-rule .hi{color:var(--accent);font-weight:700;transition:color 0.4s ease}
+    .rounding-badge{display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.48rem;padding:0.2rem 0.68rem;border-radius:100px;font-size:0.68rem;font-weight:700}
+    .rounding-badge.down{background:rgba(74,86,120,0.3);border:1px solid rgba(74,86,120,0.45);color:var(--text-secondary)}
+    .rounding-badge.up{background:var(--accent-dim);border:1px solid var(--border-focus);color:var(--accent)}
+    .btn-row{display:flex;gap:0.8rem;margin-top:1.4rem;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:0.42rem;padding:0.68rem 1.35rem;border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:0.86rem;font-weight:600;cursor:pointer;border:none;transition:all var(--transition);letter-spacing:0.01em}
+    .btn:active{transform:scale(0.97)}
+    .btn-primary{background:var(--accent);color:#06101f;box-shadow:0 4px 18px var(--accent-glow);transition:background 0.4s ease,box-shadow 0.4s ease,filter var(--transition),transform var(--transition)}
+    .btn-primary:hover{filter:brightness(1.1);box-shadow:0 6px 26px var(--accent-glow);transform:translateY(-1px)}
+    .btn-secondary{background:rgba(255,255,255,0.05);color:var(--text-secondary);border:1.5px solid var(--border)}
+    .btn-secondary:hover{color:var(--danger);border-color:rgba(255,95,109,0.4);background:rgba(255,95,109,0.07)}
+    .alert{display:none;align-items:center;gap:0.55rem;padding:0.65rem 1rem;border-radius:var(--radius-sm);font-size:0.82rem;font-weight:500;margin-top:1rem}
+    .alert.show{display:flex;animation:shake 0.33s ease}
+    .alert-error{background:rgba(255,95,109,0.1);border:1px solid rgba(255,95,109,0.35);color:var(--danger)}
+    .alert-info{background:var(--accent-dim);border:1px solid var(--border-focus);color:var(--accent)}
+    @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+    .summary-row{display:none;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+    .summary-row.show{display:grid;animation:fade-up 0.4s ease both}
+    @media(max-width:680px){.summary-row{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:380px){.summary-row{grid-template-columns:1fr}}
+    .chip{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-md);padding:0.95rem 1.1rem;display:flex;flex-direction:column;gap:0.25rem;transition:all var(--transition)}
+    .chip:hover{border-color:var(--border-focus);box-shadow:var(--shadow-glow)}
+    .chip-label{font-size:0.63rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted)}
+    .chip-value{font-size:1.15rem;font-weight:800;letter-spacing:-0.02em}
+    .c-p{color:var(--text-primary)}.c-m{color:var(--purple)}.c-i{color:var(--accent);transition:color 0.4s ease}.c-a{color:var(--gold)}
+    .table-section{display:none;animation:fade-up 0.45s ease both}.table-section.show{display:block}
+    .table-header-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+    .entry-badge{display:inline-flex;align-items:center;background:var(--accent-dim);border:1px solid var(--border-focus);border-radius:100px;padding:0.2rem 0.75rem;font-size:0.73rem;font-weight:700;color:var(--accent);transition:background 0.4s ease,border-color 0.4s ease,color 0.4s ease}
+    .table-scroll{overflow-x:auto;border-radius:var(--radius-md)}
+    table{width:100%;border-collapse:collapse;font-size:0.85rem}
+    thead tr{background:linear-gradient(135deg,var(--accent-dim)0%,rgba(255,255,255,0.02)100%)}
+    thead th{padding:0.82rem 0.95rem;font-size:0.66rem;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;color:var(--accent);border-bottom:1px solid var(--border-focus);white-space:nowrap;text-align:right;transition:color 0.4s ease}
+    thead th:first-child{text-align:center}thead th.th-m{color:var(--purple);text-align:center}
+    tbody tr{border-bottom:1px solid var(--border);transition:background var(--transition)}
+    tbody tr:nth-child(even){background:var(--row-alt)}tbody tr:hover{background:var(--row-hover)}
+    tbody tr.anim{animation:row-pop 0.32s cubic-bezier(0.34,1.56,0.64,1)both}
+    @keyframes row-pop{from{opacity:0;transform:translateY(-6px)scale(0.987)}to{opacity:1;transform:translateY(0)scale(1)}}
+    tbody td{padding:0.7rem 0.95rem;text-align:right;color:var(--text-secondary);font-variant-numeric:tabular-nums;white-space:nowrap}
+    tbody td:first-child{text-align:center;color:var(--text-muted);font-weight:700;font-size:0.75rem}
+    .td-p{color:var(--text-primary)!important;font-weight:600!important}.td-m{color:var(--purple)!important;font-weight:600!important;text-align:center!important}.td-i{color:var(--accent)!important;transition:color 0.4s ease}.td-a{color:var(--gold)!important;font-weight:600!important}
+    tfoot tr{background:linear-gradient(135deg,var(--gold-dim,rgba(245,200,66,0.12))0%,transparent 100%);border-top:2px solid rgba(245,200,66,0.32)}
+    tfoot td{padding:0.88rem 0.95rem;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+    tfoot td:first-child{text-align:center;font-size:0.66rem;font-weight:800;letter-spacing:0.09em;text-transform:uppercase;color:var(--gold)}
+    .tf-p{color:var(--text-primary)}.tf-m{color:var(--purple);text-align:center!important}.tf-i{color:var(--accent);transition:color 0.4s ease}.tf-a{color:var(--gold);font-size:0.94rem}
+    footer{text-align:center;margin-top:2.5rem;color:var(--text-muted);font-size:0.7rem;letter-spacing:0.04em;line-height:2}
+    footer .f-a{color:var(--accent);transition:color 0.4s ease}
+    @keyframes fade-down{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes fade-up{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+    input[type=number]{-moz-appearance:textfield}
+    ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--accent-dim);border-radius:10px}::-webkit-scrollbar-thumb:hover{background:var(--accent-glow)}
   </style>
-</head>
-<body>
-
-  <!-- ── Tab Navigation ──────────────────────────────────────────── -->
+</head><body>
   <nav id="main-nav">
     <div class="nav-inner">
       <a href="#" class="nav-brand" id="nav-brand" onclick="return false;">
@@ -427,27 +152,33 @@
     </div>
   </nav>
 
-  <!-- ── Main Content ──────────────────────────────────────────────── -->
   <div class="page-wrapper">
-
-    <!-- Header -->
     <header>
       <div class="header-badge">
         &#128201;&nbsp;<span class="badge-rate" id="lbl-badge">1%</span>&nbsp;Monthly Rate
       </div>
       <h1 id="lbl-h1">1% Monthly Compounding Calculator</h1>
-      <!-- Dynamic compounding frequency banner -->
       <div class="freq-banner" id="freq-banner">
         <span class="freq-dot"></span>
         <span id="freq-text">Compounding Frequency: <strong>Monthly</strong> (Interest added every 1 month)</span>
       </div>
     </header>
 
-    <!-- Input Card -->
     <div class="glass-card input-section">
       <div class="section-title">New Entry</div>
 
-      <div class="form-grid-3">
+      <!-- Input Mode Toggle -->
+      <div class="input-mode-toggle" role="group" aria-label="Time input method">
+        <button class="mode-btn active" id="mode-btn-date" type="button" onclick="setInputMode('date')">
+          <span>&#128197;</span> Enter Date Directly
+        </button>
+        <button class="mode-btn" id="mode-btn-manual" type="button" onclick="setInputMode('manual')">
+          <span>&#9998;</span> Enter Total Months Manually
+        </button>
+      </div>
+
+      <!-- Principal (always visible) -->
+      <div class="form-grid-3" style="margin-bottom:1.15rem;">
         <div class="field-group">
           <label for="inp-principal">Principal Amount (&#8377;)</label>
           <div class="input-wrap">
@@ -456,7 +187,10 @@
           </div>
           <span class="field-hint">Enter 0 to stop (Java loop-exit condition).</span>
         </div>
+      </div>
 
+      <!-- Date Fields (shown in date mode) -->
+      <div id="date-fields-row">
         <div class="field-group">
           <label for="inp-start-date">Start Date</label>
           <div class="input-wrap">
@@ -465,7 +199,6 @@
           </div>
           <span class="field-hint">Date from which interest is applied.</span>
         </div>
-
         <div class="field-group">
           <label for="inp-current-date">Current Date</label>
           <div class="input-wrap">
@@ -476,25 +209,28 @@
         </div>
       </div>
 
+      <!-- Manual Months Field (shown in manual mode) -->
+      <div id="manual-months-row">
+        <div class="field-group">
+          <label for="inp-months">Total Months (b)</label>
+          <div class="input-wrap">
+            <span class="icon" aria-hidden="true">&#128337;</span>
+            <input type="number" id="inp-months" placeholder="e.g. 24" min="1" step="1" autocomplete="off" />
+          </div>
+          <span class="field-hint">Enter the number of months directly.</span>
+        </div>
+      </div>
+
       <!-- Date Difference Preview -->
       <div class="date-preview" id="date-preview">
         <div class="dp-title">&#128336; Date Difference Breakdown</div>
         <div class="dp-grid">
-          <div>
-            <div class="dp-cell-label">Start Date</div>
-            <div class="dp-cell-value v-purple" id="dp-start">—</div>
-          </div>
-          <div>
-            <div class="dp-cell-label">Current Date</div>
-            <div class="dp-cell-value v-accent" id="dp-end">—</div>
-          </div>
-          <div>
-            <div class="dp-cell-label">Months Used (b)</div>
-            <div class="dp-cell-value v-gold" id="dp-months">—</div>
-          </div>
+          <div><div class="dp-cell-label">Start Date</div><div class="dp-cell-value v-purple" id="dp-start">&#8212;</div></div>
+          <div><div class="dp-cell-label">Current Date</div><div class="dp-cell-value v-accent" id="dp-end">&#8212;</div></div>
+          <div><div class="dp-cell-label">Months Used (b)</div><div class="dp-cell-value v-gold" id="dp-months">&#8212;</div></div>
         </div>
         <div class="dp-rule">
-          Raw difference: <span id="dp-raw">—</span> &mdash; <span id="dp-desc"></span>
+          Raw difference: <span id="dp-raw">&#8212;</span> &mdash; <span id="dp-desc"></span>
           <br/><span class="rounding-badge" id="dp-pill"></span>
         </div>
       </div>
@@ -504,7 +240,7 @@
         <span>&#9888;</span> <span id="alert-msg">Error</span>
       </div>
       <div class="alert alert-info" id="alert-info" role="status" aria-live="polite">
-        <span>&#8505;</span> Principal is 0 — entry not added (Java loop-exit condition).
+        <span>&#8505;</span> Principal is 0 &#8212; entry not added (Java loop-exit condition).
       </div>
 
       <div class="btn-row">
@@ -552,89 +288,69 @@
       </div>
     </div>
 
-    <!-- Footer -->
     <footer id="page-footer">
       Formula: <span class="f-a" id="lbl-formula"></span><br/>
-      c = vars per tab &nbsp;|&nbsp; Date rounding: 1–2 leftover days → ignore &nbsp;·&nbsp; 3+ days → +1 month &nbsp;|&nbsp;
+      d &amp; c = vars per tab &nbsp;|&nbsp; Date rounding: 1&#8211;2 leftover days &#8594; ignore &nbsp;&#183;&nbsp; 3+ days &#8594; +1 month &nbsp;|&nbsp;
       Interest &amp; Amount via <span class="f-a">Math.ceil()</span>
     </footer>
-
-  </div><!-- /page-wrapper -->
-
+  </div>
   <script>
     /* ================================================================
        CompoundCalc SPA
-       ================================================================
-
-       Rate configurations:
-         - 1%   : MONTHLY compounding  → a * (1 + rate/100)^b
-         - Others: SEMI-ANNUAL         → a * (1 + 6*rate/100)^c * (1 + d*rate/100)
-                   where c = floor(b/6), d = b % 6
-
-       Date → Months rounding rule (preserved exactly):
-         leftover 1-2 days → ignore  (round down)
-         leftover 3+ days  → +1 month (round up)
-
-       Display rules (Ankur.java):
-         principal : Math.floor()
-         interest  : Math.ceil()
-         amount    : Math.ceil()
-         totals    : integer sums
-
-       Per-tab state:  tabState[id].entries = []
+       RATES:
+         r1  (1%)   monthly: amount = a*(1+rate/100)^b
+         r15 (1.5%) annual:  d=b%12; c=(b-d)/12; amount=a*(1+12r/100)^c*(1+dr/100)
+         others semi-annual: d=b%6;  c=(b-d)/6;  amount=a*(1+6r/100)^c*(1+dr/100)
+       No Math.floor in compounding - strict (b-d)/N integer division.
+       Input modes: 'date' -> calcMonths()->b  |  'manual' -> user types b
+       Display (Ankur.java): principal=floor, interest=ceil, amount=ceil
     ================================================================ */
 
-    /* ── Rate Registry ─────────────────────────────────────────── */
     var RATES = [
-      { id:'r1',   rate:1,    label:'1%',    accent:'#38bdf8', rgb:'56,189,248',   monthly:true  },
-      { id:'r175', rate:1.75, label:'1.75%', accent:'#10d9a0', rgb:'16,217,160',   monthly:false },
-      { id:'r2',   rate:2,    label:'2%',    accent:'#a78bfa', rgb:'167,139,250',  monthly:false },
-      { id:'r25',  rate:2.5,  label:'2.5%',  accent:'#00e6c8', rgb:'0,230,200',    monthly:false },
-      { id:'r3',   rate:3,    label:'3%',    accent:'#f59e0b', rgb:'245,158,11',   monthly:false },
-      { id:'r5',   rate:5,    label:'5%',    accent:'#f43f5e', rgb:'244,63,94',    monthly:false }
+      { id:'r1',   rate:1,    label:'1%',    accent:'#38bdf8', rgb:'56,189,248',  monthly:true,  annual:false },
+      { id:'r15',  rate:1.5,  label:'1.5%',  accent:'#34d399', rgb:'52,211,153',  monthly:false, annual:true  },
+      { id:'r175', rate:1.75, label:'1.75%', accent:'#10d9a0', rgb:'16,217,160',  monthly:false, annual:false },
+      { id:'r2',   rate:2,    label:'2%',    accent:'#a78bfa', rgb:'167,139,250', monthly:false, annual:false },
+      { id:'r25',  rate:2.5,  label:'2.5%',  accent:'#00e6c8', rgb:'0,230,200',   monthly:false, annual:false },
+      { id:'r3',   rate:3,    label:'3%',    accent:'#f59e0b', rgb:'245,158,11',  monthly:false, annual:false },
+      { id:'r5',   rate:5,    label:'5%',    accent:'#f43f5e', rgb:'244,63,94',   monthly:false, annual:false }
     ];
 
-    /* ── Per-tab state ──────────────────────────────────────────── */
     var tabState = {};
-    RATES.forEach(function(r) { tabState[r.id] = { entries: [] }; });
+    RATES.forEach(function(r){ tabState[r.id]={entries:[]}; });
 
-    var currentTab  = RATES[0];  /* active rate config */
+    var currentTab = RATES[0];
+    var inputMode  = 'date';
 
-    /* ── Apply CSS theme ────────────────────────────────────────── */
     function applyTheme(r) {
       var root = document.documentElement;
       root.style.setProperty('--accent',       r.accent);
-      root.style.setProperty('--accent-dim',   'rgba(' + r.rgb + ',0.15)');
-      root.style.setProperty('--accent-glow',  'rgba(' + r.rgb + ',0.35)');
-      root.style.setProperty('--border-focus', 'rgba(' + r.rgb + ',0.55)');
-      root.style.setProperty('--bg-glow',      'rgba(' + r.rgb + ',0.06)');
-      root.style.setProperty('--shadow-glow',  '0 0 24px rgba(' + r.rgb + ',0.18)');
-      root.style.setProperty('--row-hover',    'rgba(' + r.rgb + ',0.06)');
+      root.style.setProperty('--accent-dim',   'rgba('+r.rgb+',0.15)');
+      root.style.setProperty('--accent-glow',  'rgba('+r.rgb+',0.35)');
+      root.style.setProperty('--border-focus', 'rgba('+r.rgb+',0.55)');
+      root.style.setProperty('--bg-glow',      'rgba('+r.rgb+',0.06)');
+      root.style.setProperty('--shadow-glow',  '0 0 24px rgba('+r.rgb+',0.18)');
+      root.style.setProperty('--row-hover',    'rgba('+r.rgb+',0.06)');
     }
 
-    /* ── Build tab list ─────────────────────────────────────────── */
     function buildTabs() {
       var list = document.getElementById('tab-list');
       list.innerHTML = '';
       RATES.forEach(function(r) {
         var btn = document.createElement('button');
-        btn.className = 'tab-btn' + (r.id === currentTab.id ? ' active' : '');
-        btn.setAttribute('role', 'tab');
-        btn.setAttribute('aria-selected', r.id === currentTab.id ? 'true' : 'false');
+        btn.className = 'tab-btn' + (r.id===currentTab.id?' active':'');
+        btn.setAttribute('role','tab');
+        btn.setAttribute('aria-selected', r.id===currentTab.id?'true':'false');
         btn.setAttribute('data-id', r.id);
-        btn.innerHTML =
-          '<span class="tab-freq-dot"></span>' +
-          r.label;
-        btn.addEventListener('click', function() { switchTab(r.id); });
+        btn.innerHTML = '<span class="tab-freq-dot"></span>' + r.label;
+        btn.addEventListener('click', function(){ switchTab(r.id); });
         list.appendChild(btn);
       });
     }
 
-    /* ── Switch tab ─────────────────────────────────────────────── */
     function switchTab(id) {
-      var r = RATES.find(function(x){ return x.id === id; });
-      if (!r || r.id === currentTab.id) return;
-
+      var r = RATES.find(function(x){ return x.id===id; });
+      if (!r || r.id===currentTab.id) return;
       currentTab = r;
       applyTheme(r);
       updateTabButtons();
@@ -647,263 +363,192 @@
     }
 
     function updateTabButtons() {
-      var btns = document.querySelectorAll('.tab-btn');
-      btns.forEach(function(btn) {
-        var active = btn.getAttribute('data-id') === currentTab.id;
+      document.querySelectorAll('.tab-btn').forEach(function(btn) {
+        var active = btn.getAttribute('data-id')===currentTab.id;
         btn.classList.toggle('active', active);
-        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        btn.setAttribute('aria-selected', active?'true':'false');
       });
     }
 
-    /* ── Update header / freq text ──────────────────────────────── */
+    /* ---- Header / freq text ---- */
     function updateHeaderText() {
       var r = currentTab;
       setText('lbl-badge', r.label);
       document.title = r.label + ' Compound Interest Calculator';
-
       if (r.monthly) {
         setText('lbl-h1', r.label + ' Monthly Compounding Calculator');
-        /* Use innerHTML so <strong> renders in the freq banner */
         document.getElementById('freq-text').innerHTML =
           'Compounding Frequency: <strong>Monthly</strong> (Interest added every 1 month)';
+        setText('lbl-formula', 'Amount = a \u00d7 (1 + '+r.rate+'/100)\u1d47  where b = total months');
+      } else if (r.annual) {
+        setText('lbl-h1', r.label + ' Annual Compounding Calculator');
+        document.getElementById('freq-text').innerHTML =
+          'Compounding Frequency: <strong>Annually</strong> (Interest added every 12 months)';
         setText('lbl-formula',
-          'Amount = a \u00d7 (1 + ' + r.rate + '/100)\u1d47  where b = total months');
+          'Amount = a \u00d7 (1 + 12\u00d7'+r.rate+'/100)\u1d9c \u00d7 (1 + d\u00d7'+r.rate+'/100)' +
+          '  |  d = b mod 12, c = (b \u2212 d) / 12');
       } else {
         setText('lbl-h1', r.label + ' Semi-Annual Compounding Calculator');
-        /* Use innerHTML so <strong> renders in the freq banner */
         document.getElementById('freq-text').innerHTML =
           'Compounding Frequency: <strong>Semi-Annually</strong> (Interest added every 6 months)';
         setText('lbl-formula',
-          'Amount = a \u00d7 (1 + 6\u00d7' + r.rate + '/100)\u1d9c \u00d7 (1 + d\u00d7' + r.rate + '/100)' +
+          'Amount = a \u00d7 (1 + 6\u00d7'+r.rate+'/100)\u1d9c \u00d7 (1 + d\u00d7'+r.rate+'/100)' +
           '  |  d = b mod 6, c = (b \u2212 d) / 6');
       }
     }
 
-    /* ── Core formula ───────────────────────────────────────────── */
-    /*
-      1% (Monthly):
-        amount = a * Math.pow(1 + (currentRate / 100), b)
-
-      All others (Semi-Annual):
-        d = b % 6               — leftover months for simple interest (remainder first)
-        c = (b - d) / 6        — full 6-month periods via strict integer division
-                                   (mirrors Java int division; no Math.floor needed)
-        amount = a * Math.pow(1 + (6 * currentRate / 100), c) * (1 + (d * currentRate) / 100)
-    */
-    function calculate(a, b) {
-      var currentRate = currentTab.rate;
-      var amount;
-
-      if (currentTab.monthly) {
-        /* 1% — Monthly compounding, every single month */
-        amount = a * Math.pow(1 + (currentRate / 100), b);
-
+    /* ---- Input mode toggle ---- */
+    function setInputMode(mode) {
+      inputMode = mode;
+      var dateRow   = document.getElementById('date-fields-row');
+      var manualRow = document.getElementById('manual-months-row');
+      var preview   = document.getElementById('date-preview');
+      var btnDate   = document.getElementById('mode-btn-date');
+      var btnManual = document.getElementById('mode-btn-manual');
+      if (mode === 'date') {
+        dateRow.classList.remove('hidden');
+        manualRow.classList.remove('show');
+        btnDate.classList.add('active');
+        btnManual.classList.remove('active');
       } else {
-        /* Semi-annual compounding (every 6 months)
-           Compute remainder first, then divide evenly — no Math.floor */
-        let d = b % 6;
-        let c = (b - d) / 6;
-        amount = a * Math.pow(1 + (6 * currentRate / 100), c) * (1 + (d * currentRate) / 100);
+        dateRow.classList.add('hidden');
+        manualRow.classList.add('show');
+        preview.classList.remove('show');
+        btnManual.classList.add('active');
+        btnDate.classList.remove('active');
       }
-
-      return { amount: amount, interest: amount - a };
+      clearAlerts();
     }
 
-    /* Java display rules (Ankur.java) */
-    function dP(n) { return Math.floor(n); }
-    function dI(n) { return Math.ceil(n);  }
-    function dA(n) { return Math.ceil(n);  }
+    /* ---- Display helpers (Ankur.java rules) ---- */
+    function dP(n){ return Math.floor(n); }
+    function dI(n){ return Math.ceil(n);  }
+    function dA(n){ return Math.ceil(n);  }
+    function setText(id,val){ var el=document.getElementById(id); if(el) el.textContent=val; }
+    function fmtNum(n){ return n.toLocaleString('en-IN'); }
+    function todayLocal(){ var t=new Date(); return new Date(t.getFullYear(),t.getMonth(),t.getDate()); }
+    function toInputValue(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+    function parseInputDate(val){ var p=val.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+    function fmtDate(d){ var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return d.getDate()+' '+M[d.getMonth()]+' '+d.getFullYear(); }
 
-    /* ── Helpers ────────────────────────────────────────────────── */
-    function setText(id, val) {
-      var el = document.getElementById(id);
-      if (el) el.textContent = val;
-    }
-
-    function fmtNum(n) { return n.toLocaleString('en-IN'); }
-
-    function todayLocal() {
-      var t = new Date();
-      return new Date(t.getFullYear(), t.getMonth(), t.getDate());
-    }
-
-    function toInputValue(d) {
-      var mm = String(d.getMonth()+1).padStart(2,'0');
-      var dd = String(d.getDate()).padStart(2,'0');
-      return d.getFullYear() + '-' + mm + '-' + dd;
-    }
-
-    function parseInputDate(val) {
-      var p = val.split('-');
-      return new Date(+p[0], +p[1]-1, +p[2]);
-    }
-
-    function fmtDate(d) {
-      var M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return d.getDate() + ' ' + M[d.getMonth()] + ' ' + d.getFullYear();
-    }
-
-    /* ── Date → Months with rounding rule ──────────────────────── */
-    /*
-      Rounding rule (strictly preserved):
-        leftover 1-2 days → ignore (round down)
-        leftover 3+ days  → +1 month (round up)
-    */
+    /* ---- Date -> Months (rounding rule strictly preserved) ---- */
     function calcMonths(startDate, endDate) {
-      var sy = startDate.getFullYear(), sm = startDate.getMonth(), sd = startDate.getDate();
-      var ny = endDate.getFullYear(),   nm = endDate.getMonth();
-
-      var totalM = (ny - sy) * 12 + (nm - sm);
-
-      /* Advance startDate by totalM months, count leftover days */
-      var advDate = new Date(sy, sm + totalM, sd);
+      var sy=startDate.getFullYear(), sm=startDate.getMonth(), sd=startDate.getDate();
+      var ny=endDate.getFullYear(),   nm=endDate.getMonth();
+      var totalM = (ny-sy)*12 + (nm-sm);
+      var advDate = new Date(sy, sm+totalM, sd);
       var rawDays = Math.floor((endDate - advDate) / 86400000);
-
       var roundedUp = (rawDays >= 3);
       if (roundedUp) totalM++;
-
-      /* Pre-rounding display values */
-      var preM     = roundedUp ? totalM - 1 : totalM;
-      var rawYears  = Math.floor(preM / 12);
-      var rawMonths = preM % 12;
-
-      return { b:totalM, rawYears:rawYears, rawMonths:rawMonths, rawDays:rawDays, roundedUp:roundedUp };
+      var preM = roundedUp ? totalM-1 : totalM;
+      return { b:totalM, rawYears:Math.floor(preM/12), rawMonths:preM%12, rawDays:rawDays, roundedUp:roundedUp };
     }
 
-    /* ── Live date preview ──────────────────────────────────────── */
-    var inpStartDate, inpCurrentDate, datePreview;
+    /* ---- Live date preview ---- */
+    var inpStartDate, inpCurrentDate, datePreviewEl;
 
     function updatePreview() {
-      if (!inpStartDate || !inpCurrentDate || !datePreview) return;
-      var sv = inpStartDate.value, ev = inpCurrentDate.value;
-      if (!sv || !ev) { datePreview.classList.remove('show'); return; }
-
-      var sd = parseInputDate(sv);
-      var ed = parseInputDate(ev);
-      if (sd >= ed) { datePreview.classList.remove('show'); return; }
-
-      var info = calcMonths(sd, ed);
-
-      setText('dp-start',  fmtDate(sd));
-      setText('dp-end',    fmtDate(ed));
-      setText('dp-months', info.b + ' months');
-
-      /* Raw diff display */
-      var parts = [];
-      if (info.rawYears  > 0) parts.push(info.rawYears  + (info.rawYears===1  ? ' yr'   :' yrs'));
-      if (info.rawMonths > 0) parts.push(info.rawMonths + (info.rawMonths===1 ? ' month':' months'));
-      if (info.rawDays   > 0) parts.push(info.rawDays   + (info.rawDays===1   ? ' day'  :' days'));
-
-      var rawEl  = document.getElementById('dp-raw');
-      var descEl = document.getElementById('dp-desc');
-      var pillEl = document.getElementById('dp-pill');
-
-      if (rawEl)  rawEl.innerHTML  = '<strong>' + (parts.join(', ') || '0 days') + '</strong>';
-
-      if (descEl && pillEl) {
-        if (info.roundedUp) {
-          descEl.innerHTML    = 'Days &ge; 3 &rarr; rounded <span class="hi">up</span> to ' + info.b + ' months';
-          pillEl.textContent  = '\u2191 Rounded up (+1 month)';
-          pillEl.className    = 'rounding-badge up';
+      if (!inpStartDate||!inpCurrentDate||!datePreviewEl||inputMode!=='date') return;
+      var sv=inpStartDate.value, ev=inpCurrentDate.value;
+      if (!sv||!ev){ datePreviewEl.classList.remove('show'); return; }
+      var sd=parseInputDate(sv), ed=parseInputDate(ev);
+      if (sd>=ed){ datePreviewEl.classList.remove('show'); return; }
+      var info=calcMonths(sd,ed);
+      setText('dp-start', fmtDate(sd));
+      setText('dp-end',   fmtDate(ed));
+      setText('dp-months', info.b+' months');
+      var parts=[];
+      if(info.rawYears>0)  parts.push(info.rawYears +(info.rawYears===1?' yr':' yrs'));
+      if(info.rawMonths>0) parts.push(info.rawMonths+(info.rawMonths===1?' month':' months'));
+      if(info.rawDays>0)   parts.push(info.rawDays  +(info.rawDays===1?' day':' days'));
+      var rawEl=document.getElementById('dp-raw'),descEl=document.getElementById('dp-desc'),pillEl=document.getElementById('dp-pill');
+      if(rawEl) rawEl.innerHTML='<strong>'+(parts.join(', ')||'0 days')+'</strong>';
+      if(descEl&&pillEl){
+        if(info.roundedUp){
+          descEl.innerHTML='Days &ge; 3 &rarr; rounded <span class="hi">up</span> to '+info.b+' months';
+          pillEl.textContent='\u2191 Rounded up (+1 month)'; pillEl.className='rounding-badge up';
         } else {
-          descEl.innerHTML    = 'Days &le; 2 &rarr; leftover days <span class="hi">ignored</span>, using ' + info.b + ' months';
-          pillEl.textContent  = '\u2193 Rounded down (days ignored)';
-          pillEl.className    = 'rounding-badge down';
+          descEl.innerHTML='Days &le; 2 &rarr; leftover days <span class="hi">ignored</span>, using '+info.b+' months';
+          pillEl.textContent='\u2193 Rounded down (days ignored)'; pillEl.className='rounding-badge down';
         }
       }
-      datePreview.classList.add('show');
+      datePreviewEl.classList.add('show');
+    }
+    function hideDatePreview(){ if(datePreviewEl) datePreviewEl.classList.remove('show'); }
+
+    /* ---- Alerts ---- */
+    function clearAlerts(){
+      var ae=document.getElementById('alert-error'),ai=document.getElementById('alert-info');
+      if(ae) ae.classList.remove('show'); if(ai) ai.classList.remove('show');
+    }
+    function showError(msg,focusEl){
+      var ae=document.getElementById('alert-error'),am=document.getElementById('alert-msg'),ai=document.getElementById('alert-info');
+      if(am) am.textContent=msg; if(ae) ae.classList.add('show'); if(ai) ai.classList.remove('show');
+      if(focusEl) focusEl.focus();
     }
 
-    function hideDatePreview() {
-      if (datePreview) datePreview.classList.remove('show');
-    }
-
-    /* ── Alerts ─────────────────────────────────────────────────── */
-    function clearAlerts() {
-      var ae = document.getElementById('alert-error');
-      var ai = document.getElementById('alert-info');
-      if (ae) ae.classList.remove('show');
-      if (ai) ai.classList.remove('show');
-    }
-    function showError(msg, focusEl) {
-      var ae = document.getElementById('alert-error');
-      var am = document.getElementById('alert-msg');
-      var ai = document.getElementById('alert-info');
-      if (am) am.textContent = msg;
-      if (ae) ae.classList.add('show');
-      if (ai) ai.classList.remove('show');
-      if (focusEl) focusEl.focus();
-    }
-
-    /* ── Add entry ──────────────────────────────────────────────── */
+    /* ---- Add Entry ---- */
     var inpPrincipal;
 
     function addEntry() {
       clearAlerts();
 
+      /* 1. Principal */
       var rawA = inpPrincipal ? inpPrincipal.value.trim() : '';
-      var sv   = inpStartDate   ? inpStartDate.value   : '';
-      var ev   = inpCurrentDate ? inpCurrentDate.value : '';
-
-      if (!rawA) { showError('Please enter a Principal amount.', inpPrincipal); return; }
-      if (!sv)   { showError('Please select a Start Date.', inpStartDate);      return; }
-
+      if (!rawA){ showError('Please enter a Principal amount.', inpPrincipal); return; }
       var a = parseFloat(rawA);
-      if (isNaN(a) || a < 0) { showError('Principal must be a non-negative number.', inpPrincipal); return; }
-
-      /* Java loop-exit condition */
-      if (a === 0) {
-        var ai = document.getElementById('alert-info');
-        if (ai) ai.classList.add('show');
-        clearForm();
-        hideDatePreview();
-        if (inpPrincipal) inpPrincipal.focus();
-        return;
+      if (isNaN(a)||a<0){ showError('Principal must be a non-negative number.', inpPrincipal); return; }
+      if (a===0){
+        var ai=document.getElementById('alert-info'); if(ai) ai.classList.add('show');
+        clearForm(); hideDatePreview(); if(inpPrincipal) inpPrincipal.focus(); return;
       }
 
-      var sd = parseInputDate(sv);
-      var ed = ev ? parseInputDate(ev) : todayLocal();
+      /* 2. Acquire b */
+      var b;
+      if (inputMode==='date'){
+        var sv = inpStartDate ? inpStartDate.value : '';
+        var ev = inpCurrentDate ? inpCurrentDate.value : '';
+        if (!sv){ showError('Please select a Start Date.', inpStartDate); return; }
+        var sd = parseInputDate(sv);
+        var ed = ev ? parseInputDate(ev) : todayLocal();
+        if (sd>=ed){ showError('Start Date must be before Current Date.', inpStartDate); return; }
+        var info = calcMonths(sd,ed);
+        if (info.b<=0){ showError('Difference must be at least 1 month.', inpStartDate); return; }
+        b = info.b;
+      } else {
+        var inpMonths = document.getElementById('inp-months');
+        var rawB = inpMonths ? inpMonths.value.trim() : '';
+        if (!rawB){ showError('Please enter the Total Months (b).', inpMonths); return; }
+        b = parseInt(rawB, 10);
+        if (isNaN(b)||b<1){ showError('Total Months must be a positive whole number.', inpMonths); return; }
+      }
 
-      if (sd >= ed) { showError('Start Date must be before Current Date.', inpStartDate); return; }
-
-      var info = calcMonths(sd, ed);
-      if (info.b <= 0) { showError('Difference must be at least 1 month.', inpStartDate); return; }
-
-      /* ── Core calculation (strictly matching original Java integer-division logic) ──
-         b  = total months from date calculation
-
-         Rule 1 — 1% (Monthly Compounding):
-           Compounding occurs every single month.
-           let amount = a * Math.pow(1 + (currentRate / 100), b);
-
-         Rule 2 — All other rates (Semi-Annual Compounding, every 6 months):
-           let d = b % 6;            // leftover months → simple interest
-           let c = (b - d) / 6;     // full 6-month periods via strict integer division
-           let amount = a * Math.pow(1 + (6 * currentRate / 100), c)
-                          * (1 + (d * currentRate) / 100);
-      ──────────────────────────────────────────────────────────────────────────────── */
+      /* 3. Calculate
+         Rule 1 - 1%   Monthly:       amount = a * Math.pow(1 + (currentRate / 100), b)
+         Rule 2 - 1.5% Annual:        d=b%12; c=(b-d)/12; amount=a*Math.pow(1+(12*rate/100),c)*(1+(d*rate)/100)
+         Rule 3 - Others Semi-Annual: d=b%6;  c=(b-d)/6;  amount=a*Math.pow(1+(6*rate/100),c)*(1+(d*rate)/100)
+         No Math.floor used - strict integer division via (b-d)/N */
       var currentRate = currentTab.rate;
-      var b = info.b;
       var amount;
 
       if (currentTab.monthly) {
-        /* Rule 1: 1% — Compounding occurs every single month */
+        /* Rule 1: 1% - Monthly compounding every single month */
         amount = a * Math.pow(1 + (currentRate / 100), b);
+
+      } else if (currentTab.annual) {
+        /* Rule 2: 1.5% - Annual compounding every 12 months */
+        let d = b % 12;
+        let c = (b - d) / 12;
+        amount = a * Math.pow(1 + (12 * currentRate / 100), c) * (1 + (d * currentRate) / 100);
+
       } else {
-        /* Rule 2: Semi-Annual — compounding every 6 months
-           Modulo first (remainder → simple interest), then strict integer division */
+        /* Rule 3: Semi-Annual - compounding every 6 months */
         let d = b % 6;
         let c = (b - d) / 6;
         amount = a * Math.pow(1 + (6 * currentRate / 100), c) * (1 + (d * currentRate) / 100);
       }
 
-      tabState[currentTab.id].entries.push({
-        principal: a,
-        interest:  amount - a,
-        months:    b,
-        amount:    amount
-      });
-
+      tabState[currentTab.id].entries.push({ principal:a, interest:amount-a, months:b, amount:amount });
       renderCurrentTable();
       updateSummary();
       clearForm();
@@ -911,108 +556,84 @@
       if (inpPrincipal) inpPrincipal.focus();
     }
 
-    /* ── Render table for current tab ───────────────────────────── */
+    /* ---- Render table ---- */
     function renderCurrentTable() {
-      var entries      = tabState[currentTab.id].entries;
-      var tableSection = document.getElementById('table-section');
-      var summaryRow   = document.getElementById('summary-row');
-      var tableBody    = document.getElementById('table-body');
-      var badge        = document.getElementById('entry-badge');
-
-      var hasEntries = entries.length > 0;
-      if (tableSection) tableSection.classList.toggle('show', hasEntries);
-      if (summaryRow)   summaryRow.classList.toggle('show', hasEntries);
-      if (!tableBody)   return;
-
-      tableBody.innerHTML = '';
-      entries.forEach(function(e, i) {
-        var tr = document.createElement('tr');
-        tr.className = 'anim';
-        tr.innerHTML =
-          '<td>' + (i+1) + '</td>' +
-          '<td class="td-p">' + fmtNum(dP(e.principal)) + '</td>' +
-          '<td class="td-m">' + e.months                + '</td>' +
-          '<td class="td-i">' + fmtNum(dI(e.interest))  + '</td>' +
-          '<td class="td-a">' + fmtNum(dA(e.amount))    + '</td>';
+      var entries=tabState[currentTab.id].entries;
+      var tableSection=document.getElementById('table-section');
+      var summaryRow=document.getElementById('summary-row');
+      var tableBody=document.getElementById('table-body');
+      var badge=document.getElementById('entry-badge');
+      var hasEntries=entries.length>0;
+      if(tableSection) tableSection.classList.toggle('show',hasEntries);
+      if(summaryRow)   summaryRow.classList.toggle('show',hasEntries);
+      if(!tableBody) return;
+      tableBody.innerHTML='';
+      entries.forEach(function(e,i){
+        var tr=document.createElement('tr'); tr.className='anim';
+        tr.innerHTML='<td>'+(i+1)+'</td>'+
+          '<td class="td-p">'+fmtNum(dP(e.principal))+'</td>'+
+          '<td class="td-m">'+e.months+'</td>'+
+          '<td class="td-i">'+fmtNum(dI(e.interest))+'</td>'+
+          '<td class="td-a">'+fmtNum(dA(e.amount))+'</td>';
         tableBody.appendChild(tr);
       });
-
-      if (badge) badge.textContent = entries.length === 1 ? '1 entry' : entries.length + ' entries';
+      if(badge) badge.textContent=entries.length===1?'1 entry':entries.length+' entries';
     }
 
-    /* ── Update summary chips + footer totals ───────────────────── */
+    /* ---- Summary chips ---- */
     function updateSummary() {
-      var entries = tabState[currentTab.id].entries;
-      var totP = entries.reduce(function(s,e){ return s + dP(e.principal); }, 0);
-      var totM = entries.reduce(function(s,e){ return s + e.months;        }, 0);
-      var totI = entries.reduce(function(s,e){ return s + dI(e.interest);  }, 0);
-      var totA = entries.reduce(function(s,e){ return s + dA(e.amount);    }, 0);
-
-      setText('chip-p', fmtNum(totP));
-      setText('chip-m', totM);
-      setText('chip-i', fmtNum(totI));
-      setText('chip-a', fmtNum(totA));
-      setText('tf-p', fmtNum(totP));
-      setText('tf-m', totM);
-      setText('tf-i', fmtNum(totI));
-      setText('tf-a', fmtNum(totA));
+      var entries=tabState[currentTab.id].entries;
+      var totP=entries.reduce(function(s,e){return s+dP(e.principal);},0);
+      var totM=entries.reduce(function(s,e){return s+e.months;},0);
+      var totI=entries.reduce(function(s,e){return s+dI(e.interest);},0);
+      var totA=entries.reduce(function(s,e){return s+dA(e.amount);},0);
+      setText('chip-p',fmtNum(totP)); setText('chip-m',totM);
+      setText('chip-i',fmtNum(totI)); setText('chip-a',fmtNum(totA));
+      setText('tf-p',fmtNum(totP)); setText('tf-m',totM);
+      setText('tf-i',fmtNum(totI)); setText('tf-a',fmtNum(totA));
     }
 
-    /* ── Reset current tab ──────────────────────────────────────── */
+    /* ---- Reset ---- */
     function resetCurrentTab() {
-      tabState[currentTab.id].entries = [];
-      renderCurrentTable();
-      updateSummary();
-      clearAlerts();
-      clearForm();
-      hideDatePreview();
-      if (inpPrincipal) inpPrincipal.focus();
+      tabState[currentTab.id].entries=[];
+      renderCurrentTable(); updateSummary(); clearAlerts(); clearForm(); hideDatePreview();
+      if(inpPrincipal) inpPrincipal.focus();
     }
 
-    /* ── Clear form inputs ──────────────────────────────────────── */
     function clearForm() {
-      if (inpPrincipal) inpPrincipal.value = '';
-      if (inpStartDate) inpStartDate.value = '';
+      if(inpPrincipal) inpPrincipal.value='';
+      if(inpStartDate) inpStartDate.value='';
+      var im=document.getElementById('inp-months'); if(im) im.value='';
     }
 
-    /* ── Initialise ─────────────────────────────────────────────── */
+    /* ---- Init ---- */
     document.addEventListener('DOMContentLoaded', function () {
-      /* Apply default theme (1%) */
       applyTheme(currentTab);
-
-      /* Build tabs */
       buildTabs();
-
-      /* Set header text */
       updateHeaderText();
 
-      /* Cache DOM refs */
       inpPrincipal   = document.getElementById('inp-principal');
       inpStartDate   = document.getElementById('inp-start-date');
       inpCurrentDate = document.getElementById('inp-current-date');
-      datePreview    = document.getElementById('date-preview');
+      datePreviewEl  = document.getElementById('date-preview');
 
-      /* Auto-fill current date with today */
       if (inpCurrentDate) inpCurrentDate.value = toInputValue(todayLocal());
-
-      /* Cap start date to today */
       if (inpStartDate) {
         inpStartDate.setAttribute('max', toInputValue(todayLocal()));
         inpStartDate.addEventListener('change', updatePreview);
       }
       if (inpCurrentDate) inpCurrentDate.addEventListener('change', updatePreview);
 
-      /* Buttons */
-      var btnAdd   = document.getElementById('btn-add');
-      var btnReset = document.getElementById('btn-reset');
-      if (btnAdd)   btnAdd.addEventListener('click', addEntry);
-      if (btnReset) btnReset.addEventListener('click', resetCurrentTab);
+      var btnAdd=document.getElementById('btn-add'), btnReset=document.getElementById('btn-reset');
+      if(btnAdd)   btnAdd.addEventListener('click', addEntry);
+      if(btnReset) btnReset.addEventListener('click', resetCurrentTab);
 
-      /* Enter key on principal */
       if (inpPrincipal) {
-        inpPrincipal.addEventListener('keydown', function(e) { if (e.key === 'Enter') addEntry(); });
+        inpPrincipal.addEventListener('keydown', function(e){ if(e.key==='Enter') addEntry(); });
         inpPrincipal.focus();
       }
+      var inpMonths=document.getElementById('inp-months');
+      if(inpMonths) inpMonths.addEventListener('keydown', function(e){ if(e.key==='Enter') addEntry(); });
 
       updateSummary();
     });
