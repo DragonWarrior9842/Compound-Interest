@@ -869,8 +869,8 @@
          b  = total months from date calculation (no leftover days for 1%)
          1% Monthly:    amount = a * (1 + rate/100)^b
          Others Semi-Annual:
-           c = Math.floor(b / 6)  — full 6-month compounding periods
-           d = b % 6              — leftover months (simple interest)
+           d = b % 6              — leftover months for simple interest (remainder first)
+           c = (b - d) / 6       — full 6-month compounding periods (strict integer division)
            amount = a * (1 + 6*rate/100)^c * (1 + d*rate/100)
       ────────────────────────────────────────────────────────────────────── */
       var currentRate = currentTab.rate;
@@ -881,9 +881,11 @@
         /* 1% — Monthly compounding, no leftover simple-interest months */
         amount = a * Math.pow(1 + (currentRate / 100), b);
       } else {
-        /* All other rates — Semi-Annual compounding every 6 months */
-        let c = Math.floor(b / 6);
+        /* All other rates — Semi-Annual compounding every 6 months
+           d first (remainder), then c via strict integer division (b - d) / 6
+           — mirrors Java integer division exactly, no Math.floor needed */
         let d = b % 6;
+        let c = (b - d) / 6;
         amount = a * Math.pow(1 + (6 * currentRate / 100), c) * (1 + (d * currentRate) / 100);
       }
 
