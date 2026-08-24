@@ -678,31 +678,28 @@
     }
 
     /* ── Core formula ───────────────────────────────────────────── */
+    /*
+      1% (Monthly):
+        amount = a * Math.pow(1 + (currentRate / 100), b)
+
+      All others (Semi-Annual):
+        c = Math.floor(b / 6)   — full 6-month compounding periods
+        d = b % 6               — leftover months (simple interest)
+        amount = a * Math.pow(1 + (6 * currentRate / 100), c) * (1 + (d * currentRate) / 100)
+    */
     function calculate(a, b) {
-      var rate = currentTab.rate;
+      var currentRate = currentTab.rate;
       var amount;
 
       if (currentTab.monthly) {
-        /*
-          1% Monthly compounding:
-          amount = a * (1 + rate/100)^b
-        */
-        amount = a * Math.pow(1 + (rate / 100), b);
+        /* 1% Monthly compounding */
+        amount = a * Math.pow(1 + (currentRate / 100), b);
 
       } else {
-        /*
-          Semi-annual compounding:
-          c = floor(b / 6)            — full 6-month compounding periods
-          d = b % 6                   — leftover months (simple interest)
-          semiAnnualRateFactor = 1 + (6 * rate) / 100
-          simpleInterestFactor = 1 + (d * rate) / 100
-          amount = a * semiAnnualRateFactor^c * simpleInterestFactor
-        */
+        /* Semi-annual compounding (every 6 months) */
         var c = Math.floor(b / 6);
         var d = b % 6;
-        var semiAnnualRateFactor = 1 + ((6 * rate) / 100);
-        var simpleInterestFactor = 1 + ((d * rate) / 100);
-        amount = a * Math.pow(semiAnnualRateFactor, c) * simpleInterestFactor;
+        amount = a * Math.pow(1 + (6 * currentRate / 100), c) * (1 + (d * currentRate) / 100);
       }
 
       return { amount: amount, interest: amount - a };
@@ -868,12 +865,33 @@
       var info = calcMonths(sd, ed);
       if (info.b <= 0) { showError('Difference must be at least 1 month.', inpStartDate); return; }
 
-      var result = calculate(a, info.b);
+      /* ── Core calculation (strictly matching original Java logic) ─────────
+         b  = total months from date calculation (no leftover days for 1%)
+         1% Monthly:    amount = a * (1 + rate/100)^b
+         Others Semi-Annual:
+           c = Math.floor(b / 6)  — full 6-month compounding periods
+           d = b % 6              — leftover months (simple interest)
+           amount = a * (1 + 6*rate/100)^c * (1 + d*rate/100)
+      ────────────────────────────────────────────────────────────────────── */
+      var currentRate = currentTab.rate;
+      var b = info.b;
+      var amount;
+
+      if (currentTab.monthly) {
+        /* 1% — Monthly compounding, no leftover simple-interest months */
+        amount = a * Math.pow(1 + (currentRate / 100), b);
+      } else {
+        /* All other rates — Semi-Annual compounding every 6 months */
+        let c = Math.floor(b / 6);
+        let d = b % 6;
+        amount = a * Math.pow(1 + (6 * currentRate / 100), c) * (1 + (d * currentRate) / 100);
+      }
+
       tabState[currentTab.id].entries.push({
         principal: a,
-        interest:  result.interest,
-        months:    info.b,
-        amount:    result.amount
+        interest:  amount - a,
+        months:    b,
+        amount:    amount
       });
 
       renderCurrentTable();
